@@ -1,0 +1,67 @@
+.team-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--surface), var(--surface-hi));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.team-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px -1px auto -1px;
+  height: 4px;
+  background: var(--team-color, var(--pink));
+}
+
+.team-card__rank {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.team-card__header h3 {
+  font-size: 22px;
+  margin-top: 6px;
+}
+
+.team-card__badge {
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--team-color, var(--pink));
+}
+
+.team-card__description {
+  font-size: 14px;
+  flex: 1;
+}
+
+.team-card__members {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.team-card__members svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.team-card__trailing {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}

@@ -1,0 +1,65 @@
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.results-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 22px;
+}
+
+.results-row__rank {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--gold);
+  width: 36px;
+}
+
+.results-row__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.results-row__info strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.results-row__info span {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.results-row__score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.results-row__average {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text);
+}
+
+.results-row__count {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+@media (max-width: 560px) {
+  .results-row {
+    flex-wrap: wrap;
+  }
+
+  .results-row__score {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
