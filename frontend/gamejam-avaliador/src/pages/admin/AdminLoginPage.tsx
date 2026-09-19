@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { IconLock } from '../../components/icons'
 import { useAuth } from '../../context/useAuth'
 
 export function AdminLoginPage() {
@@ -32,21 +31,6 @@ export function AdminLoginPage() {
   return (
     <div className="page container container--narrow">
       <div className="card" style={{ maxWidth: 380, margin: '40px auto 0', textAlign: 'center' }}>
-        <div
-          style={{
-            width: 52,
-            height: 52,
-            borderRadius: 16,
-            background: 'var(--gradient-main)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 16,
-            color: '#fff',
-          }}
-        >
-          <IconLock style={{ width: 24, height: 24 }} />
-        </div>
         <h2 style={{ fontSize: 22, marginBottom: 6 }}>Painel administrativo</h2>
         <p style={{ marginBottom: 20 }}>Acesso restrito à organização da GameJam Delas.</p>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

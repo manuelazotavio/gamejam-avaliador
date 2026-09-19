@@ -1,0 +1,11 @@
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 520px) {
+  .teams-grid {
+    grid-template-columns: 1fr;
+  }
+}

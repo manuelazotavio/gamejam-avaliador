@@ -1,0 +1,51 @@
+.evaluation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  text-align: left;
+}
+
+.evaluation-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evaluation-form__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.evaluation-form__label span {
+  color: var(--text-dim);
+}
+
+.evaluation-form__label strong {
+  font-family: var(--font-display);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.evaluation-form input[type='range'] {
+  width: 100%;
+  accent-color: var(--pink);
+}
+
+.evaluation-form__total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.evaluation-form__total strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--pink-dim);
+}

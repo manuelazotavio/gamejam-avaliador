@@ -24,7 +24,7 @@
 }
 
 .vote-stepper__dot.is-active {
-  background: var(--gradient-main);
+  background: var(--pink);
   border-color: transparent;
   color: #fff;
 }
@@ -50,65 +50,41 @@
   width: 100%;
 }
 
-.vote-card__icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient-main);
-  color: #fff;
-}
-
-.vote-card__icon svg {
-  width: 26px;
-  height: 26px;
-}
-
-.vote-card__icon--success {
-  background: linear-gradient(120deg, #1c8f5f, var(--teal));
-}
-
 .vote-card__hint {
   font-size: 13px;
   color: var(--text-faint);
 }
 
-.vote-teams__list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.vote-team-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px;
+.vote-card--evaluation {
+  align-items: stretch;
   text-align: left;
 }
 
-.vote-team-row__info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.vote-card--evaluation h2 {
+  text-align: center;
 }
 
-.vote-team-row__info strong {
+.vote-card--evaluation .vote-card__hint {
+  text-align: center;
+  margin-top: -8px;
+}
+
+.vote-progress {
+  align-self: center;
   font-family: var(--font-display);
-  font-size: 15px;
-}
-
-.vote-team-row__info span {
   font-size: 12px;
-  color: var(--text-faint);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--pink-dim);
 }
 
-@media (max-width: 520px) {
-  .vote-team-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.vote-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.vote-nav .btn-primary {
+  flex: 1;
 }

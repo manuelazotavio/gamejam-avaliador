@@ -1,5 +1,4 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { IconLogout } from '../../components/icons'
 import { useAuth } from '../../context/useAuth'
 import './admin.css'
 
@@ -29,7 +28,7 @@ export function AdminLayout() {
           ))}
         </nav>
         <button className="btn btn-ghost btn-sm admin-sidebar__logout" onClick={logout}>
-          <IconLogout style={{ width: 16, height: 16 }} /> Sair
+          Sair
         </button>
       </aside>
       <div className="admin-content container">

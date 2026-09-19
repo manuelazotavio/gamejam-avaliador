@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { IconArrowRight, IconCheck, IconLock, IconMapPin } from '../../components/icons'
+import { EvaluationForm } from '../../components/EvaluationForm'
 import { Loader } from '../../components/Loader'
-import { StarRating } from '../../components/StarRating'
 import { useToast } from '../../context/useToast'
 import { formatCpf, isValidCpf, stripCpf } from '../../lib/cpf'
 import { getClientIp } from '../../lib/clientIp'
 import { getCurrentPosition, haversineDistanceMeters } from '../../lib/geo'
 import { checkVoterEligibility, getConfig, listTeams, submitVote } from '../../services/db'
-import type { EventConfig, Team } from '../../types'
+import { EMPTY_EVALUATION, type EventConfig, type EvaluationInput, type Team } from '../../types'
 import './vote.css'
 
 type Step = 'location' | 'cpf' | 'vote' | 'done'
@@ -28,7 +27,8 @@ export function VotePage() {
 
   const [ip, setIp] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[] | null>(null)
-  const [ratings, setRatings] = useState<Record<string, number>>({})
+  const [teamIndex, setTeamIndex] = useState(0)
+  const [evaluations, setEvaluations] = useState<Record<string, EvaluationInput>>({})
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -81,26 +81,30 @@ export function VotePage() {
         return
       }
       const teamList = await listTeams()
+      if (teamList.length === 0) {
+        setCpfError('Nenhum time cadastrado para avaliação ainda.')
+        return
+      }
       setTeams(teamList)
+      setTeamIndex(0)
       setStep('vote')
     } finally {
       setCpfLoading(false)
     }
   }
 
-  async function handleSubmitVotes() {
+  function updateCurrentEvaluation(teamId: string, value: EvaluationInput) {
+    setEvaluations((prev) => ({ ...prev, [teamId]: value }))
+  }
+
+  async function handleSubmitVotes(finalEvaluations: Record<string, EvaluationInput>) {
     if (!teams || !ip) return
-    const missing = teams.some((team) => !ratings[team.id])
-    if (missing) {
-      notify('Avalie todos os times antes de enviar.', 'error')
-      return
-    }
     setSubmitting(true)
     try {
       await submitVote(
         cpfInput,
         ip,
-        teams.map((team) => ({ teamId: team.id, stars: ratings[team.id] })),
+        teams.map((team) => ({ teamId: team.id, scores: finalEvaluations[team.id] ?? EMPTY_EVALUATION })),
       )
       setStep('done')
     } catch (error) {
@@ -109,6 +113,22 @@ export function VotePage() {
       setSubmitting(false)
     }
   }
+
+  function handleNext() {
+    if (!teams) return
+    if (teamIndex < teams.length - 1) {
+      setTeamIndex((index) => index + 1)
+    } else {
+      handleSubmitVotes(evaluations)
+    }
+  }
+
+  function handleBack() {
+    setTeamIndex((index) => Math.max(0, index - 1))
+  }
+
+  const currentTeam = teams?.[teamIndex] ?? null
+  const currentValue = currentTeam ? (evaluations[currentTeam.id] ?? EMPTY_EVALUATION) : EMPTY_EVALUATION
 
   return (
     <div className="page container container--narrow vote-page">
@@ -122,9 +142,6 @@ export function VotePage() {
 
       {step === 'location' && (
         <div className="card vote-card">
-          <div className="vote-card__icon">
-            <IconMapPin />
-          </div>
           <h2>Confirme sua presença no evento</h2>
           <p>
             Para votar, precisamos confirmar que você está fisicamente no local da GameJam
@@ -142,9 +159,6 @@ export function VotePage() {
 
       {step === 'cpf' && (
         <div className="card vote-card">
-          <div className="vote-card__icon">
-            <IconLock />
-          </div>
           <h2>Identifique-se com seu CPF</h2>
           <p>Usamos seu CPF apenas para garantir um voto por pessoa. Ele precisa estar na lista de eleitores do evento.</p>
           <div className="field">
@@ -162,40 +176,31 @@ export function VotePage() {
           {cpfError && <div className="alert alert--error">{cpfError}</div>}
           <button className="btn btn-primary btn-block" onClick={handleCheckCpf} disabled={cpfLoading}>
             {cpfLoading ? 'Validando...' : 'Continuar'}
-            {!cpfLoading && <IconArrowRight style={{ width: 18, height: 18 }} />}
           </button>
         </div>
       )}
 
-      {step === 'vote' && teams && (
-        <div className="vote-teams">
-          <h2 style={{ marginBottom: 6 }}>Avalie cada time</h2>
-          <p style={{ marginBottom: 24 }}>Dê de 1 a 5 estrelas para cada jogo apresentado.</p>
-          <div className="vote-teams__list">
-            {teams.map((team) => (
-              <div key={team.id} className="card vote-team-row">
-                <div className="vote-team-row__info">
-                  <strong>{team.gameTitle}</strong>
-                  <span>{team.name}</span>
-                </div>
-                <StarRating
-                  value={ratings[team.id] ?? 0}
-                  onChange={(value) => setRatings((prev) => ({ ...prev, [team.id]: value }))}
-                />
-              </div>
-            ))}
+      {step === 'vote' && currentTeam && teams && (
+        <div className="card vote-card vote-card--evaluation">
+          <span className="vote-progress">
+            Time {teamIndex + 1} de {teams.length}
+          </span>
+          <h2>{currentTeam.gameTitle}</h2>
+          <p className="vote-card__hint">{currentTeam.name}</p>
+          <EvaluationForm value={currentValue} onChange={(value) => updateCurrentEvaluation(currentTeam.id, value)} />
+          <div className="vote-nav">
+            <button className="btn btn-ghost" onClick={handleBack} disabled={teamIndex === 0 || submitting}>
+              Voltar
+            </button>
+            <button className="btn btn-primary" onClick={handleNext} disabled={submitting}>
+              {submitting ? 'Enviando...' : teamIndex < teams.length - 1 ? 'Próximo time' : 'Enviar avaliações'}
+            </button>
           </div>
-          <button className="btn btn-primary btn-block" onClick={handleSubmitVotes} disabled={submitting} style={{ marginTop: 24 }}>
-            {submitting ? 'Enviando votos...' : 'Enviar votos'}
-          </button>
         </div>
       )}
 
       {step === 'done' && (
         <div className="card vote-card vote-card--success">
-          <div className="vote-card__icon vote-card__icon--success">
-            <IconCheck />
-          </div>
           <h2>Voto registrado!</h2>
           <p>Obrigada por avaliar os times da GameJam Delas. Confira o placar em tempo real.</p>
           <Link to="/resultados" className="btn btn-primary btn-block">

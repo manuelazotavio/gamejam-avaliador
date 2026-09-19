@@ -1,27 +1,24 @@
 :root {
-  --bg: #12081f;
-  --bg-alt: #1c0f30;
-  --surface: #221336;
-  --surface-hi: #2c1846;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #f1ecfb;
-  --text-dim: #b7a9d6;
-  --text-faint: #8577a6;
+  --bg: #fff2f8;
+  --bg-alt: #ffe6f1;
+  --surface: #ffffff;
+  --surface-hi: #ffe9f3;
+  --border: rgba(74, 25, 66, 0.1);
+  --border-strong: rgba(74, 25, 66, 0.18);
+  --text: #4a1942;
+  --text-dim: #8a5c78;
+  --text-faint: #b48ea3;
 
   --pink: #ff4fd8;
-  --pink-dim: #b32e97;
+  --pink-dim: #d43aa8;
   --violet: #7c4dff;
-  --violet-dim: #4d2fa3;
-  --gold: #ffc93c;
-  --teal: #00e5c7;
-  --red: #ff5c72;
-  --green: #45e08c;
+  --violet-dim: #5c35c9;
+  --gold: #b8860b;
+  --teal: #00a88f;
+  --red: #d1293f;
+  --green: #1f9d5c;
 
-  --gradient-main: linear-gradient(120deg, var(--pink), var(--violet));
-  --gradient-gold: linear-gradient(120deg, #ffe08a, var(--gold));
-  --shadow-glow: 0 0 0 1px var(--border), 0 20px 60px -20px rgba(255, 79, 216, 0.45);
-  --shadow-soft: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  --shadow-soft: 0 10px 30px -12px rgba(74, 25, 66, 0.18);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -31,7 +28,7 @@
   --font-display: 'Baloo 2', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -47,10 +44,7 @@ body,
 body {
   margin: 0;
   font-family: var(--font-body);
-  background:
-    radial-gradient(1100px 600px at 12% -10%, rgba(124, 77, 255, 0.35), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(255, 79, 216, 0.25), transparent 55%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -102,7 +96,7 @@ button {
 }
 
 .page {
-  padding: 56px 0 96px;
+  padding-block: 56px 96px;
 }
 
 .eyebrow {
@@ -114,13 +108,6 @@ button {
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: var(--gold);
-}
-
-.gradient-text {
-  background: var(--gradient-main);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 .btn {
@@ -151,23 +138,22 @@ button {
 }
 
 .btn-primary {
-  background: var(--gradient-main);
+  background: var(--pink);
   color: #fff;
-  box-shadow: 0 12px 30px -10px rgba(255, 79, 216, 0.6);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 16px 36px -8px rgba(255, 79, 216, 0.75);
+  background: var(--pink-dim);
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(74, 25, 66, 0.04);
   color: var(--text);
   border-color: var(--border-strong);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(74, 25, 66, 0.08);
 }
 
 .btn-danger {
@@ -190,11 +176,7 @@ button {
 }
 
 .card {
-  background: linear-gradient(180deg, var(--surface), var(--surface) 60%, var(--surface-hi));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  box-shadow: var(--shadow-soft);
+  padding: 28px 0;
 }
 
 .field {
@@ -213,7 +195,7 @@ button {
 .input,
 textarea.input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.25);
+  background: #ffffff;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   padding: 13px 16px;
@@ -275,13 +257,13 @@ textarea.input:focus {
 .alert--error {
   background: rgba(255, 92, 114, 0.12);
   border-color: rgba(255, 92, 114, 0.4);
-  color: #ffc4cd;
+  color: #a3223a;
 }
 
 .alert--info {
   background: rgba(124, 77, 255, 0.12);
   border-color: rgba(124, 77, 255, 0.4);
-  color: #d9cdff;
+  color: #4b2e9e;
 }
 
 .divider {
@@ -295,7 +277,7 @@ textarea.input:focus {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.18);
+  border: 3px solid rgba(74, 25, 66, 0.15);
   border-top-color: var(--pink);
   animation: spin 0.8s linear infinite;
 }
@@ -347,6 +329,6 @@ table.data-table tr:last-child td {
 
 @media (max-width: 720px) {
   .page {
-    padding: 36px 0 64px;
+    padding-block: 36px 64px;
   }
 }

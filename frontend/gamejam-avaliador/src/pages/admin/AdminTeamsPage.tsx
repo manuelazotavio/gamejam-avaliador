@@ -7,9 +7,6 @@ import type { Team } from '../../types'
 const EMPTY_FORM: TeamInput = {
   name: '',
   gameTitle: '',
-  description: '',
-  members: [],
-  color: '#ff4fd8',
 }
 
 export function AdminTeamsPage() {
@@ -17,7 +14,6 @@ export function AdminTeamsPage() {
   const [teams, setTeams] = useState<Team[] | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<TeamInput>(EMPTY_FORM)
-  const [membersText, setMembersText] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function refresh() {
@@ -33,17 +29,12 @@ export function AdminTeamsPage() {
     setForm({
       name: team.name,
       gameTitle: team.gameTitle,
-      description: team.description,
-      members: team.members,
-      color: team.color,
     })
-    setMembersText(team.members.join(', '))
   }
 
   function resetForm() {
     setEditingId(null)
     setForm(EMPTY_FORM)
-    setMembersText('')
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -53,19 +44,12 @@ export function AdminTeamsPage() {
       return
     }
     setSaving(true)
-    const payload: TeamInput = {
-      ...form,
-      members: membersText
-        .split(',')
-        .map((m) => m.trim())
-        .filter(Boolean),
-    }
     try {
       if (editingId) {
-        await updateTeam(editingId, payload)
+        await updateTeam(editingId, form)
         notify('Time atualizado.', 'success')
       } else {
-        await createTeam(payload)
+        await createTeam(form)
         notify('Time cadastrado.', 'success')
       }
       resetForm()
@@ -112,35 +96,6 @@ export function AdminTeamsPage() {
               placeholder="Encanto de Bytes"
             />
           </div>
-          <div className="field" style={{ gridColumn: '1 / -1' }}>
-            <label>Descrição</label>
-            <textarea
-              className="input"
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Conte do que se trata o jogo"
-            />
-          </div>
-          <div className="field">
-            <label>Integrantes (separadas por vírgula)</label>
-            <input
-              className="input"
-              value={membersText}
-              onChange={(e) => setMembersText(e.target.value)}
-              placeholder="Ana, Bia, Carla"
-            />
-          </div>
-          <div className="field">
-            <label>Cor do time</label>
-            <input
-              type="color"
-              className="input"
-              style={{ padding: 4, height: 46 }}
-              value={form.color}
-              onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
-            />
-          </div>
         </div>
         <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
           <button type="submit" className="btn btn-primary" disabled={saving}>
@@ -163,7 +118,6 @@ export function AdminTeamsPage() {
               <tr>
                 <th>Time</th>
                 <th>Jogo</th>
-                <th>Integrantes</th>
                 <th></th>
               </tr>
             </thead>
@@ -172,7 +126,6 @@ export function AdminTeamsPage() {
                 <tr key={team.id}>
                   <td>{team.name}</td>
                   <td>{team.gameTitle}</td>
-                  <td>{team.members.join(', ') || '—'}</td>
                   <td style={{ display: 'flex', gap: 8 }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => startEdit(team)}>
                       Editar
@@ -185,7 +138,7 @@ export function AdminTeamsPage() {
               ))}
               {teams.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
+                  <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
                     Nenhum time cadastrado.
                   </td>
                 </tr>

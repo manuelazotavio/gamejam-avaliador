@@ -21,15 +21,15 @@
 }
 
 .toast--success {
-  background: linear-gradient(120deg, #1c8f5f, #17b37e);
+  background: #1c8f5f;
 }
 
 .toast--error {
-  background: linear-gradient(120deg, #b3294a, #e13858);
+  background: #c9314f;
 }
 
 .toast--info {
-  background: linear-gradient(120deg, var(--violet-dim), var(--violet));
+  background: var(--violet-dim);
 }
 
 @keyframes toast-in {

@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { IconMapPin } from '../../components/icons'
 import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { getCurrentPosition } from '../../lib/geo'
@@ -97,7 +96,6 @@ export function AdminConfigPage() {
           disabled={locating}
           style={{ marginBottom: 16 }}
         >
-          <IconMapPin style={{ width: 16, height: 16 }} />
           {locating ? 'Localizando...' : 'Usar minha localização atual (no IF)'}
         </button>
 

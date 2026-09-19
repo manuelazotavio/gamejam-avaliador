@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Loader } from '../../components/Loader'
-import { StarRating } from '../../components/StarRating'
-import { getResults, listTeams, listVoters, listVotes, type TeamResult } from '../../services/db'
-import type { Team, VoteRecord, Voter } from '../../types'
+import { getResults, listVoters, listVotes } from '../../services/db'
+import { apiListTeams } from '../../services/api'
+import type { Team, TeamResult, VoteRecord, Voter } from '../../types'
 
 interface Stats {
   teams: Team[]
@@ -15,7 +15,7 @@ export function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
 
   useEffect(() => {
-    Promise.all([listTeams(), listVoters(), listVotes(), getResults()]).then(
+    Promise.all([apiListTeams(), listVoters(), listVotes(), getResults()]).then(
       ([teams, voters, votes, results]) => setStats({ teams, voters, votes, results }),
     )
   }, [])
@@ -25,6 +25,7 @@ export function AdminDashboardPage() {
   const turnout = stats.voters.length
     ? Math.round((stats.voters.filter((v) => v.hasVoted).length / stats.voters.length) * 100)
     : 0
+  const criteriaLabels = stats.results[0]?.criterionScores.map((c) => c.label) ?? []
 
   return (
     <div>
@@ -36,19 +37,19 @@ export function AdminDashboardPage() {
       </div>
 
       <div className="admin-stat-grid">
-        <div className="card admin-stat-card">
+        <div className="admin-stat-card">
           <div className="admin-stat-card__value">{stats.teams.length}</div>
           <div className="admin-stat-card__label">Times cadastrados</div>
         </div>
-        <div className="card admin-stat-card">
+        <div className="admin-stat-card">
           <div className="admin-stat-card__value">{stats.voters.length}</div>
           <div className="admin-stat-card__label">Eleitoras importadas</div>
         </div>
-        <div className="card admin-stat-card">
+        <div className="admin-stat-card">
           <div className="admin-stat-card__value">{stats.votes.length}</div>
           <div className="admin-stat-card__label">Votos registrados</div>
         </div>
-        <div className="card admin-stat-card">
+        <div className="admin-stat-card">
           <div className="admin-stat-card__value">{turnout}%</div>
           <div className="admin-stat-card__label">Participação</div>
         </div>
@@ -59,24 +60,29 @@ export function AdminDashboardPage() {
         <table className="data-table">
           <thead>
             <tr>
+              <th>#</th>
               <th>Time</th>
               <th>Jogo</th>
-              <th>Média</th>
-              <th>Votos</th>
+              <th>Nota final</th>
+              {criteriaLabels.map((label) => (
+                <th key={label}>{label}</th>
+              ))}
+              <th>Avaliações</th>
             </tr>
           </thead>
           <tbody>
             {stats.results.map((result) => (
-              <tr key={result.team.id}>
-                <td>{result.team.name}</td>
-                <td>{result.team.gameTitle}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <StarRating value={Math.round(result.average)} readOnly size={16} />
-                    {result.average.toFixed(1)}
-                  </div>
-                </td>
-                <td>{result.votesCount}</td>
+              <tr key={result.teamId}>
+                <td>{result.rank}º</td>
+                <td>{result.teamName}</td>
+                <td>{result.gameTitle}</td>
+                <td>{result.finalScore.toFixed(1)}/100</td>
+                {result.criterionScores.map((score) => (
+                  <td key={score.criterion}>
+                    {score.average.toFixed(1)}/{score.maxScore}
+                  </td>
+                ))}
+                <td>{result.evaluationCount}</td>
               </tr>
             ))}
           </tbody>

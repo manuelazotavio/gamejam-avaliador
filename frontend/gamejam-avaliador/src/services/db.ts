@@ -1,9 +1,11 @@
 import { isValidCpf, stripCpf } from '../lib/cpf'
 import { readJson, writeJson } from '../lib/storage'
-import type { EventConfig, Team, VoteEntry, VoteRecord, Voter } from '../types'
+import { apiCreateTeam, apiDeleteTeam, apiGetResults, apiListTeams, apiSubmitEvaluation, apiUpdateTeam, type TeamInput } from './api'
+import type { EventConfig, EvaluationInput, Team, TeamResult, VoteRecord, Voter } from '../types'
+
+export type { TeamInput } from './api'
 
 const KEYS = {
-  teams: 'gamejam.teams',
   voters: 'gamejam.voters',
   votes: 'gamejam.votes',
   config: 'gamejam.config',
@@ -11,49 +13,6 @@ const KEYS = {
 }
 
 const ADMIN_PASSCODE = 'gamejam2025'
-
-const DEFAULT_TEAMS: Team[] = [
-  {
-    id: 'team-pixel-bruxas',
-    name: 'Pixel Bruxas',
-    gameTitle: 'Encanto de Bytes',
-    description:
-      'Um platformer mágico onde três bruxas programadoras precisam quebrar bugs amaldiçoados para salvar o reino do código.',
-    members: ['Aline Souza', 'Beatriz Nunes', 'Carla Menezes'],
-    color: '#ff4fd8',
-    createdAt: Date.now(),
-  },
-  {
-    id: 'team-byte-me',
-    name: 'Byte Me',
-    gameTitle: 'Overclock',
-    description:
-      'Corrida frenética em realidade aumentada por dentro de uma placa-mãe que está superaquecendo.',
-    members: ['Débora Lima', 'Elisa Prado'],
-    color: '#7c4dff',
-    createdAt: Date.now(),
-  },
-  {
-    id: 'team-garotas-glitch',
-    name: 'Garotas Glitch',
-    gameTitle: 'Falha Fatal',
-    description:
-      'Puzzle narrativo sobre uma hacker que precisa consertar a própria realidade antes que ela se desfaça em glitches.',
-    members: ['Fernanda Reis', 'Giovana Castro', 'Helena Torres', 'Isabela Farias'],
-    color: '#00e5c7',
-    createdAt: Date.now(),
-  },
-  {
-    id: 'team-rainha-do-loop',
-    name: 'Rainha do Loop',
-    gameTitle: 'Ciclo Infinito',
-    description:
-      'Roguelike sobre repetir o mesmo dia até encontrar a sequência certa de decisões para libertar o reino.',
-    members: ['Juliana Alves', 'Karina Dutra'],
-    color: '#ffb703',
-    createdAt: Date.now(),
-  },
-]
 
 const DEFAULT_CONFIG: EventConfig = {
   eventName: 'GameJam Delas',
@@ -66,7 +25,6 @@ const DEFAULT_CONFIG: EventConfig = {
 function seedIfNeeded(): void {
   const seeded = readJson<boolean>(KEYS.seeded, false)
   if (seeded) return
-  writeJson(KEYS.teams, DEFAULT_TEAMS)
   writeJson(KEYS.voters, [] as Voter[])
   writeJson(KEYS.votes, [] as VoteRecord[])
   writeJson(KEYS.config, DEFAULT_CONFIG)
@@ -83,50 +41,24 @@ function uid(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`
 }
 
-export async function listTeams(): Promise<Team[]> {
-  const teams = readJson<Team[]>(KEYS.teams, [])
-  return delay([...teams].sort((a, b) => a.createdAt - b.createdAt))
+export function listTeams(): Promise<Team[]> {
+  return apiListTeams()
 }
 
-export async function getTeam(id: string): Promise<Team | null> {
-  const teams = readJson<Team[]>(KEYS.teams, [])
-  return delay(teams.find((team) => team.id === id) ?? null)
+export function createTeam(input: TeamInput): Promise<Team> {
+  return apiCreateTeam(input)
 }
 
-export interface TeamInput {
-  name: string
-  gameTitle: string
-  description: string
-  members: string[]
-  color: string
+export function updateTeam(id: string, input: TeamInput): Promise<Team> {
+  return apiUpdateTeam(id, input)
 }
 
-export async function createTeam(input: TeamInput): Promise<Team> {
-  const teams = readJson<Team[]>(KEYS.teams, [])
-  const team: Team = { id: uid('team'), createdAt: Date.now(), ...input }
-  writeJson(KEYS.teams, [...teams, team])
-  return delay(team)
+export function deleteTeam(id: string): Promise<void> {
+  return apiDeleteTeam(id)
 }
 
-export async function updateTeam(id: string, input: TeamInput): Promise<Team | null> {
-  const teams = readJson<Team[]>(KEYS.teams, [])
-  let updated: Team | null = null
-  const next = teams.map((team) => {
-    if (team.id !== id) return team
-    updated = { ...team, ...input }
-    return updated
-  })
-  writeJson(KEYS.teams, next)
-  return delay(updated)
-}
-
-export async function deleteTeam(id: string): Promise<void> {
-  const teams = readJson<Team[]>(KEYS.teams, [])
-  writeJson(
-    KEYS.teams,
-    teams.filter((team) => team.id !== id),
-  )
-  return delay(undefined)
+export function getResults(): Promise<TeamResult[]> {
+  return apiGetResults()
 }
 
 export async function listVoters(): Promise<Voter[]> {
@@ -238,11 +170,20 @@ export async function checkVoterEligibility(cpfRaw: string, ip: string): Promise
   return delay({ ok: true, reason: null, voter })
 }
 
-export async function submitVote(cpfRaw: string, ip: string, entries: VoteEntry[]): Promise<VoteRecord> {
+export interface TeamEvaluation {
+  teamId: string
+  scores: EvaluationInput
+}
+
+export async function submitVote(cpfRaw: string, ip: string, evaluations: TeamEvaluation[]): Promise<VoteRecord> {
   const cpf = stripCpf(cpfRaw)
   const eligibility = await checkVoterEligibility(cpf, ip)
   if (!eligibility.ok) {
     throw new Error(eligibility.reason ?? 'Não foi possível registrar o voto.')
+  }
+
+  for (const evaluation of evaluations) {
+    await apiSubmitEvaluation(evaluation.teamId, evaluation.scores)
   }
 
   const voters = readJson<Voter[]>(KEYS.voters, [])
@@ -252,7 +193,6 @@ export async function submitVote(cpfRaw: string, ip: string, entries: VoteEntry[
     id: uid('vote'),
     cpf,
     ip,
-    entries,
     createdAt: Date.now(),
   }
 
@@ -263,35 +203,11 @@ export async function submitVote(cpfRaw: string, ip: string, entries: VoteEntry[
   writeJson(KEYS.voters, nextVoters)
   writeJson(KEYS.votes, [...votes, record])
 
-  return delay(record)
+  return record
 }
 
 export async function listVotes(): Promise<VoteRecord[]> {
   return delay(readJson<VoteRecord[]>(KEYS.votes, []))
-}
-
-export interface TeamResult {
-  team: Team
-  average: number
-  votesCount: number
-}
-
-export async function getResults(): Promise<TeamResult[]> {
-  const teams = readJson<Team[]>(KEYS.teams, [])
-  const votes = readJson<VoteRecord[]>(KEYS.votes, [])
-
-  const results: TeamResult[] = teams.map((team) => {
-    const stars = votes
-      .flatMap((vote) => vote.entries)
-      .filter((entry) => entry.teamId === team.id)
-      .map((entry) => entry.stars)
-
-    const average = stars.length ? stars.reduce((sum, value) => sum + value, 0) / stars.length : 0
-
-    return { team, average, votesCount: stars.length }
-  })
-
-  return delay(results.sort((a, b) => b.average - a.average))
 }
 
 export async function adminLogin(password: string): Promise<boolean> {

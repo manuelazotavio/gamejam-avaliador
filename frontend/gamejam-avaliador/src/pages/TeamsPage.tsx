@@ -3,6 +3,7 @@ import { Loader } from '../components/Loader'
 import { TeamCard } from '../components/TeamCard'
 import { listTeams } from '../services/db'
 import type { Team } from '../types'
+import './TeamsPage.css'
 
 export function TeamsPage() {
   const [teams, setTeams] = useState<Team[] | null>(null)
@@ -27,13 +28,7 @@ export function TeamsPage() {
       )}
 
       {teams !== null && teams.length > 0 && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 20,
-          }}
-        >
+        <div className="teams-grid">
           {teams.map((team) => (
             <TeamCard key={team.id} team={team} />
           ))}

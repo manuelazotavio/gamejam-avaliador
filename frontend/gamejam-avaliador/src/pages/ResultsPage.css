@@ -8,7 +8,12 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 18px 22px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.results-list .results-row:last-child {
+  border-bottom: none;
 }
 
 .results-row__rank {
@@ -44,8 +49,8 @@
 
 .results-row__average {
   font-family: var(--font-display);
-  font-size: 16px;
-  color: var(--text);
+  font-size: 18px;
+  color: var(--pink-dim);
 }
 
 .results-row__count {

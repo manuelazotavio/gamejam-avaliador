@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconUpload } from '../../components/icons'
 import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { formatCpf } from '../../lib/cpf'
@@ -88,7 +87,6 @@ export function AdminVotersPage() {
         />
         <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button className="btn btn-primary" onClick={handleImport} disabled={importing}>
-            <IconUpload style={{ width: 16, height: 16 }} />
             {importing ? 'Importando...' : 'Importar'}
           </button>
           <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>

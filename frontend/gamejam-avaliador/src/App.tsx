@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Footer } from './components/Footer'
 import { Navbar } from './components/Navbar'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -9,7 +9,6 @@ import { AdminLayout } from './pages/admin/AdminLayout'
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
 import { AdminTeamsPage } from './pages/admin/AdminTeamsPage'
 import { AdminVotersPage } from './pages/admin/AdminVotersPage'
-import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ResultsPage } from './pages/ResultsPage'
 import { TeamsPage } from './pages/TeamsPage'
@@ -28,8 +27,8 @@ function PublicLayout({ children }: { children: ReactNode }) {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
-      <Route path="/times" element={<PublicLayout><TeamsPage /></PublicLayout>} />
+      <Route path="/" element={<PublicLayout><TeamsPage /></PublicLayout>} />
+      <Route path="/times" element={<Navigate to="/" replace />} />
       <Route path="/votar" element={<PublicLayout><VotePage /></PublicLayout>} />
       <Route path="/resultados" element={<PublicLayout><ResultsPage /></PublicLayout>} />
 
