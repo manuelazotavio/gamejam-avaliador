@@ -14,12 +14,7 @@ export function TeamsPage() {
 
   return (
     <div className="page container">
-      <span className="eyebrow">times inscritas</span>
-      <h1 style={{ fontSize: 40, marginTop: 10, marginBottom: 10 }}>Conheça as equipes</h1>
-      <p style={{ maxWidth: 560, marginBottom: 36 }}>
-        Cada time é formado por desenvolvedoras que criaram um jogo do zero durante a jam. Explore
-        os projetos antes de votar.
-      </p>
+      <h1 style={{ fontSize: 40, marginBottom: 36 }}>Escolha um time para votar</h1>
 
       {teams === null && <Loader label="Carregando times..." />}
 
