@@ -3,12 +3,15 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
 
 export function AdminLoginPage() {
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, loading: authLoading, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  if (authLoading) return null
 
   if (isAuthenticated) {
     const redirectTo = (location.state as { from?: string } | null)?.from ?? '/admin/dashboard'
@@ -19,10 +22,10 @@ export function AdminLoginPage() {
     event.preventDefault()
     setLoading(true)
     setError(null)
-    const ok = await login(password)
+    const ok = await login(email.trim(), password)
     setLoading(false)
     if (!ok) {
-      setError('Senha incorreta.')
+      setError('E-mail ou senha incorretos.')
       return
     }
     navigate('/admin/dashboard', { replace: true })
@@ -35,6 +38,18 @@ export function AdminLoginPage() {
         <p style={{ marginBottom: 20 }}>Acesso restrito à organização da GameJam Delas.</p>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="field">
+            <label htmlFor="email">E-mail</label>
+            <input
+              id="email"
+              type="email"
+              className="input"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="username"
+              autoFocus
+            />
+          </div>
+          <div className="field">
             <label htmlFor="password">Senha</label>
             <input
               id="password"
@@ -43,7 +58,7 @@ export function AdminLoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
-              autoFocus
+              autoComplete="current-password"
             />
           </div>
           {error && <div className="alert alert--error">{error}</div>}

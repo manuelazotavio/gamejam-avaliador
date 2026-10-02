@@ -122,7 +122,9 @@ export function AdminVotersPage() {
                   <td>{formatCpf(voter.cpf)}</td>
                   <td>
                     <span className={`badge ${voter.hasVoted ? 'badge--good' : 'badge--warn'}`}>
-                      {voter.hasVoted ? 'Votou' : 'Pendente'}
+                      {voter.hasVoted
+                        ? `${voter.evaluationCount} ${voter.evaluationCount === 1 ? 'time avaliado' : 'times avaliados'}`
+                        : 'Pendente'}
                     </span>
                   </td>
                   <td>

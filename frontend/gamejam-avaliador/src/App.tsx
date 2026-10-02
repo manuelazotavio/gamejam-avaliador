@@ -7,6 +7,7 @@ import { AdminConfigPage } from './pages/admin/AdminConfigPage'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { AdminLayout } from './pages/admin/AdminLayout'
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
+import { AdminQrCodesPage } from './pages/admin/AdminQrCodesPage'
 import { AdminTeamsPage } from './pages/admin/AdminTeamsPage'
 import { AdminVotersPage } from './pages/admin/AdminVotersPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -44,6 +45,7 @@ function App() {
         <Route index element={<AdminDashboardPage />} />
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="times" element={<AdminTeamsPage />} />
+        <Route path="qrcodes" element={<AdminQrCodesPage />} />
         <Route path="eleitoras" element={<AdminVotersPage />} />
         <Route path="configuracoes" element={<AdminConfigPage />} />
       </Route>

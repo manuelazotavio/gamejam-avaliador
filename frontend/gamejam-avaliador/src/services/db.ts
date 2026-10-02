@@ -1,69 +1,154 @@
+import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
 import { isValidCpf, stripCpf } from '../lib/cpf'
-import { readJson, writeJson } from '../lib/storage'
-import { apiCreateTeam, apiDeleteTeam, apiGetResults, apiListTeams, apiSubmitEvaluation, apiUpdateTeam, type TeamInput } from './api'
-import type { EventConfig, EvaluationInput, Team, TeamResult, VoteRecord, Voter } from '../types'
+import { supabase } from '../lib/supabase'
+import { CRITERIA, type EventConfig, type EvaluationInput, type Team, type TeamResult, type Voter } from '../types'
 
-export type { TeamInput } from './api'
+const GENERIC_ERROR = 'Não foi possível falar com o servidor.'
 
-const KEYS = {
-  voters: 'gamejam.voters',
-  votes: 'gamejam.votes',
-  config: 'gamejam.config',
-  seeded: 'gamejam.seeded',
+function unwrap<T>({ data, error }: { data: T; error: PostgrestError | null }): NonNullable<T> {
+  if (error) {
+    console.error(error)
+    throw new Error(GENERIC_ERROR)
+  }
+  return data as NonNullable<T>
 }
 
-const ADMIN_PASSCODE = 'gamejam2025'
-
-const DEFAULT_CONFIG: EventConfig = {
-  eventName: 'GameJam Delas',
-  latitude: -23.5505,
-  longitude: -46.6333,
-  radiusMeters: 300,
-  votingOpen: true,
+async function invokeFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke<T>(name, { body })
+  if (error) {
+    const payload =
+      error instanceof FunctionsHttpError
+        ? ((await error.context.json().catch(() => null)) as { error?: string } | null)
+        : null
+    throw new Error(payload?.error ?? GENERIC_ERROR)
+  }
+  return data as T
 }
 
-function seedIfNeeded(): void {
-  const seeded = readJson<boolean>(KEYS.seeded, false)
-  if (seeded) return
-  writeJson(KEYS.voters, [] as Voter[])
-  writeJson(KEYS.votes, [] as VoteRecord[])
-  writeJson(KEYS.config, DEFAULT_CONFIG)
-  writeJson(KEYS.seeded, true)
+function toTimestamp(value: string | null): number | null {
+  return value ? new Date(value).getTime() : null
 }
 
-seedIfNeeded()
-
-function delay<T>(value: T, ms = 220): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms))
+/** creativityInnovation -> creativity_innovation */
+function toColumn(key: keyof EvaluationInput): string {
+  return key.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`)
 }
 
-function uid(prefix: string): string {
-  return `${prefix}-${crypto.randomUUID()}`
+// ---------------------------------------------------------------------------
+// Times
+// ---------------------------------------------------------------------------
+
+export interface TeamInput {
+  name: string
+  gameTitle: string
 }
 
-export function listTeams(): Promise<Team[]> {
-  return apiListTeams()
+interface TeamRow {
+  id: string
+  name: string
+  game_title: string
 }
 
-export function createTeam(input: TeamInput): Promise<Team> {
-  return apiCreateTeam(input)
+function toTeam(row: TeamRow): Team {
+  return { id: row.id, name: row.name, gameTitle: row.game_title }
 }
 
-export function updateTeam(id: string, input: TeamInput): Promise<Team> {
-  return apiUpdateTeam(id, input)
+export async function listTeams(): Promise<Team[]> {
+  const rows = unwrap(await supabase.from('teams').select('id, name, game_title').order('created_at'))
+  return rows.map(toTeam)
 }
 
-export function deleteTeam(id: string): Promise<void> {
-  return apiDeleteTeam(id)
+export async function getTeam(id: string): Promise<Team | null> {
+  const { data, error } = await supabase.from('teams').select('id, name, game_title').eq('id', id).maybeSingle()
+  if (error) {
+    console.error(error)
+    throw new Error(GENERIC_ERROR)
+  }
+  return data ? toTeam(data) : null
 }
 
-export function getResults(): Promise<TeamResult[]> {
-  return apiGetResults()
+export async function createTeam(input: TeamInput): Promise<Team> {
+  const row = unwrap(
+    await supabase
+      .from('teams')
+      .insert({ name: input.name.trim(), game_title: input.gameTitle.trim() })
+      .select('id, name, game_title')
+      .single(),
+  )
+  return toTeam(row)
+}
+
+export async function updateTeam(id: string, input: TeamInput): Promise<Team> {
+  const row = unwrap(
+    await supabase
+      .from('teams')
+      .update({ name: input.name.trim(), game_title: input.gameTitle.trim() })
+      .eq('id', id)
+      .select('id, name, game_title')
+      .single(),
+  )
+  return toTeam(row)
+}
+
+export async function deleteTeam(id: string): Promise<void> {
+  unwrap(await supabase.from('teams').delete().eq('id', id))
+}
+
+// ---------------------------------------------------------------------------
+// Placar
+// ---------------------------------------------------------------------------
+
+type TeamResultRow = {
+  rank: number
+  team_id: string
+  team_name: string
+  game_title: string
+  final_score: number
+  evaluation_count: number
+} & Record<string, number | string>
+
+export async function getResults(): Promise<TeamResult[]> {
+  const rows = unwrap(await supabase.from('team_results').select('*').order('rank')) as TeamResultRow[]
+  return rows.map((row) => ({
+    rank: row.rank,
+    teamId: row.team_id,
+    teamName: row.team_name,
+    gameTitle: row.game_title,
+    finalScore: row.final_score,
+    evaluationCount: row.evaluation_count,
+    criterionScores: CRITERIA.map((criterion) => ({
+      criterion: criterion.key,
+      label: criterion.label,
+      maxScore: criterion.max,
+      average: Number(row[toColumn(criterion.key)]),
+    })),
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// Eleitoras e votos (admin)
+// ---------------------------------------------------------------------------
+
+interface VoterStatusRow {
+  cpf: string
+  name: string
+  imported: boolean
+  evaluation_count: number
+  first_voted_at: string | null
+  ip: string | null
 }
 
 export async function listVoters(): Promise<Voter[]> {
-  const voters = readJson<Voter[]>(KEYS.voters, [])
-  return delay([...voters].sort((a, b) => a.name.localeCompare(b.name)))
+  const rows = unwrap(await supabase.from('voter_status').select('*').order('name')) as VoterStatusRow[]
+  return rows.map((row) => ({
+    cpf: row.cpf,
+    name: row.name,
+    imported: row.imported,
+    hasVoted: row.evaluation_count > 0,
+    evaluationCount: row.evaluation_count,
+    votedAt: toTimestamp(row.first_voted_at),
+    ip: row.ip,
+  }))
 }
 
 export interface VoterImportRow {
@@ -78,138 +163,110 @@ export interface ImportSummary {
 }
 
 export async function importVoters(rows: VoterImportRow[]): Promise<ImportSummary> {
-  const voters = readJson<Voter[]>(KEYS.voters, [])
-  const existingCpfs = new Set(voters.map((voter) => voter.cpf))
   const summary: ImportSummary = { added: 0, duplicated: 0, invalid: 0 }
-  const additions: Voter[] = []
+  const unique = new Map<string, { cpf: string; name: string }>()
 
   for (const row of rows) {
     const cpf = stripCpf(row.cpf)
     if (!isValidCpf(cpf)) {
       summary.invalid += 1
-      continue
-    }
-    if (existingCpfs.has(cpf)) {
+    } else if (unique.has(cpf)) {
       summary.duplicated += 1
-      continue
+    } else {
+      unique.set(cpf, { cpf, name: row.name.trim() || 'Sem nome informado' })
     }
-    existingCpfs.add(cpf)
-    additions.push({
-      cpf,
-      name: row.name.trim() || 'Sem nome informado',
-      imported: true,
-      hasVoted: false,
-      votedAt: null,
-      ip: null,
-    })
-    summary.added += 1
   }
 
-  writeJson(KEYS.voters, [...voters, ...additions])
-  return delay(summary)
+  if (unique.size > 0) {
+    // ignoreDuplicates: CPFs já cadastrados não voltam no select.
+    const inserted = unwrap(
+      await supabase
+        .from('voters')
+        .upsert([...unique.values()], { onConflict: 'cpf', ignoreDuplicates: true })
+        .select('cpf'),
+    )
+    summary.added = inserted.length
+    summary.duplicated += unique.size - inserted.length
+  }
+
+  return summary
 }
 
 export async function removeVoter(cpf: string): Promise<void> {
-  const voters = readJson<Voter[]>(KEYS.voters, [])
-  writeJson(
-    KEYS.voters,
-    voters.filter((voter) => voter.cpf !== stripCpf(cpf)),
-  )
-  return delay(undefined)
+  unwrap(await supabase.from('voters').delete().eq('cpf', stripCpf(cpf)))
 }
+
+// ---------------------------------------------------------------------------
+// Configuração do evento
+// ---------------------------------------------------------------------------
+
+interface EventConfigRow {
+  event_name: string
+  latitude: number
+  longitude: number
+  radius_meters: number
+  voting_open: boolean
+  one_vote_per_ip: boolean
+}
+
+function toConfig(row: EventConfigRow): EventConfig {
+  return {
+    eventName: row.event_name,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    radiusMeters: row.radius_meters,
+    votingOpen: row.voting_open,
+    oneVotePerIp: row.one_vote_per_ip,
+  }
+}
+
+const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip'
 
 export async function getConfig(): Promise<EventConfig> {
-  return delay(readJson<EventConfig>(KEYS.config, DEFAULT_CONFIG))
+  return toConfig(unwrap(await supabase.from('event_config').select(CONFIG_COLUMNS).eq('id', 1).single()))
 }
 
-export async function updateConfig(patch: Partial<EventConfig>): Promise<EventConfig> {
-  const current = readJson<EventConfig>(KEYS.config, DEFAULT_CONFIG)
-  const next = { ...current, ...patch }
-  writeJson(KEYS.config, next)
-  return delay(next)
+export async function updateConfig(config: EventConfig): Promise<EventConfig> {
+  const row = unwrap(
+    await supabase
+      .from('event_config')
+      .update({
+        event_name: config.eventName,
+        latitude: config.latitude,
+        longitude: config.longitude,
+        radius_meters: config.radiusMeters,
+        voting_open: config.votingOpen,
+        one_vote_per_ip: config.oneVotePerIp,
+      })
+      .eq('id', 1)
+      .select(CONFIG_COLUMNS)
+      .single(),
+  )
+  return toConfig(row)
 }
+
+// ---------------------------------------------------------------------------
+// Votação (Edge Functions)
+// ---------------------------------------------------------------------------
 
 export interface EligibilityResult {
   ok: boolean
   reason: string | null
-  voter: Voter | null
 }
 
-export async function checkVoterEligibility(cpfRaw: string, ip: string): Promise<EligibilityResult> {
-  const cpf = stripCpf(cpfRaw)
-  const config = readJson<EventConfig>(KEYS.config, DEFAULT_CONFIG)
-  const voters = readJson<Voter[]>(KEYS.voters, [])
-
-  if (!config.votingOpen) {
-    return delay({ ok: false, reason: 'A votação está encerrada no momento.', voter: null })
-  }
-  if (!isValidCpf(cpf)) {
-    return delay({ ok: false, reason: 'CPF inválido.', voter: null })
-  }
-
-  const voter = voters.find((entry) => entry.cpf === cpf) ?? null
-  if (!voter) {
-    return delay({
-      ok: false,
-      reason: 'Este CPF não está na lista de eleitores autorizados do evento.',
-      voter: null,
-    })
-  }
-  if (voter.hasVoted) {
-    return delay({ ok: false, reason: 'Este CPF já registrou um voto.', voter })
-  }
-  const ipAlreadyVoted = voters.some((entry) => entry.hasVoted && entry.ip === ip)
-  if (ipAlreadyVoted) {
-    return delay({
-      ok: false,
-      reason: 'Já existe um voto registrado a partir deste dispositivo/rede.',
-      voter,
-    })
-  }
-
-  return delay({ ok: true, reason: null, voter })
+export function checkVoterEligibility(cpf: string, teamId: string): Promise<EligibilityResult> {
+  return invokeFunction<EligibilityResult>('check-voter', { cpf: stripCpf(cpf), teamId })
 }
 
-export interface TeamEvaluation {
-  teamId: string
-  scores: EvaluationInput
+export async function submitEvaluation(cpf: string, teamId: string, scores: EvaluationInput): Promise<void> {
+  await invokeFunction('submit-vote', { cpf: stripCpf(cpf), teamId, scores })
 }
 
-export async function submitVote(cpfRaw: string, ip: string, evaluations: TeamEvaluation[]): Promise<VoteRecord> {
-  const cpf = stripCpf(cpfRaw)
-  const eligibility = await checkVoterEligibility(cpf, ip)
-  if (!eligibility.ok) {
-    throw new Error(eligibility.reason ?? 'Não foi possível registrar o voto.')
-  }
+// ---------------------------------------------------------------------------
+// Admin
+// ---------------------------------------------------------------------------
 
-  for (const evaluation of evaluations) {
-    await apiSubmitEvaluation(evaluation.teamId, evaluation.scores)
-  }
-
-  const voters = readJson<Voter[]>(KEYS.voters, [])
-  const votes = readJson<VoteRecord[]>(KEYS.votes, [])
-
-  const record: VoteRecord = {
-    id: uid('vote'),
-    cpf,
-    ip,
-    createdAt: Date.now(),
-  }
-
-  const nextVoters = voters.map((voter) =>
-    voter.cpf === cpf ? { ...voter, hasVoted: true, votedAt: record.createdAt, ip } : voter,
-  )
-
-  writeJson(KEYS.voters, nextVoters)
-  writeJson(KEYS.votes, [...votes, record])
-
-  return record
-}
-
-export async function listVotes(): Promise<VoteRecord[]> {
-  return delay(readJson<VoteRecord[]>(KEYS.votes, []))
-}
-
-export async function adminLogin(password: string): Promise<boolean> {
-  return delay(password === ADMIN_PASSCODE)
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('is_admin')
+  return !error && data === true
 }

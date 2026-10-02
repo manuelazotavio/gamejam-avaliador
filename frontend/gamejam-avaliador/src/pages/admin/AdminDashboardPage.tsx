@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Loader } from '../../components/Loader'
-import { getResults, listVoters, listVotes } from '../../services/db'
-import { apiListTeams } from '../../services/api'
-import type { Team, TeamResult, VoteRecord, Voter } from '../../types'
+import { getResults, listTeams, listVoters } from '../../services/db'
+import type { Team, TeamResult, Voter } from '../../types'
 
 interface Stats {
   teams: Team[]
   voters: Voter[]
-  votes: VoteRecord[]
   results: TeamResult[]
 }
 
@@ -15,8 +13,8 @@ export function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
 
   useEffect(() => {
-    Promise.all([apiListTeams(), listVoters(), listVotes(), getResults()]).then(
-      ([teams, voters, votes, results]) => setStats({ teams, voters, votes, results }),
+    Promise.all([listTeams(), listVoters(), getResults()]).then(
+      ([teams, voters, results]) => setStats({ teams, voters, results }),
     )
   }, [])
 
@@ -25,6 +23,7 @@ export function AdminDashboardPage() {
   const turnout = stats.voters.length
     ? Math.round((stats.voters.filter((v) => v.hasVoted).length / stats.voters.length) * 100)
     : 0
+  const evaluationTotal = stats.results.reduce((sum, result) => sum + result.evaluationCount, 0)
   const criteriaLabels = stats.results[0]?.criterionScores.map((c) => c.label) ?? []
 
   return (
@@ -46,8 +45,8 @@ export function AdminDashboardPage() {
           <div className="admin-stat-card__label">Eleitoras importadas</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-card__value">{stats.votes.length}</div>
-          <div className="admin-stat-card__label">Votos registrados</div>
+          <div className="admin-stat-card__value">{evaluationTotal}</div>
+          <div className="admin-stat-card__label">Avaliações registradas</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card__value">{turnout}%</div>

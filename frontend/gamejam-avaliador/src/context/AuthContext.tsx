@@ -1,31 +1,51 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import { adminLogin } from '../services/db'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { supabase } from '../lib/supabase'
+import { isCurrentUserAdmin } from '../services/db'
 import { AuthContext, type AuthContextValue } from './auth-context'
 
-const SESSION_KEY = 'gamejam.adminSession'
+type Status = 'loading' | 'admin' | 'anonymous'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => sessionStorage.getItem(SESSION_KEY) === 'true',
-  )
+  const [status, setStatus] = useState<Status>('loading')
+
+  useEffect(() => {
+    let active = true
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      const admin = data.session ? await isCurrentUserAdmin() : false
+      if (active) setStatus(admin ? 'admin' : 'anonymous')
+    })
+
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') setStatus('anonymous')
+    })
+
+    return () => {
+      active = false
+      data.subscription.unsubscribe()
+    }
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      isAuthenticated,
-      login: async (password: string) => {
-        const ok = await adminLogin(password)
-        if (ok) {
-          sessionStorage.setItem(SESSION_KEY, 'true')
-          setIsAuthenticated(true)
+      isAuthenticated: status === 'admin',
+      loading: status === 'loading',
+      login: async (email: string, password: string) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) return false
+        if (!(await isCurrentUserAdmin())) {
+          await supabase.auth.signOut()
+          return false
         }
-        return ok
+        setStatus('admin')
+        return true
       },
-      logout: () => {
-        sessionStorage.removeItem(SESSION_KEY)
-        setIsAuthenticated(false)
+      logout: async () => {
+        await supabase.auth.signOut()
+        setStatus('anonymous')
       },
     }),
-    [isAuthenticated],
+    [status],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -128,6 +128,28 @@ export function AdminConfigPage() {
           Votação aberta
         </label>
 
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            marginBottom: 20,
+            fontSize: 14,
+            color: 'var(--text-dim)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={config.oneVotePerIp}
+            onChange={(e) => setConfig({ ...config, oneVotePerIp: e.target.checked })}
+          />
+          <span>
+            Permitir só um voto por rede (IP)
+            <br />
+            <small>Deixe desligado se o público vai votar pelo mesmo Wi-Fi do evento.</small>
+          </span>
+        </label>
+
         <button type="submit" className="btn btn-primary" disabled={saving}>
           {saving ? 'Salvando...' : 'Salvar configurações'}
         </button>

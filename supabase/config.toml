@@ -1,0 +1,12 @@
+project_id = "gamejam-avaliador"
+
+[auth]
+# Contas de admin são criadas pelo painel do Supabase; ninguém se cadastra pelo app.
+enable_signup = false
+
+# As funções de votação são públicas: quem vota não tem login.
+[functions.check-voter]
+verify_jwt = false
+
+[functions.submit-vote]
+verify_jwt = false

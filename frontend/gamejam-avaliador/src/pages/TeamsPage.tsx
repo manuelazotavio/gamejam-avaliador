@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Loader } from '../components/Loader'
 import { TeamCard } from '../components/TeamCard'
 import { listTeams } from '../services/db'
@@ -25,7 +26,9 @@ export function TeamsPage() {
       {teams !== null && teams.length > 0 && (
         <div className="teams-grid">
           {teams.map((team) => (
-            <TeamCard key={team.id} team={team} />
+            <Link key={team.id} to={`/votar?time=${team.id}`} className="teams-grid__link">
+              <TeamCard team={team} />
+            </Link>
           ))}
         </div>
       )}

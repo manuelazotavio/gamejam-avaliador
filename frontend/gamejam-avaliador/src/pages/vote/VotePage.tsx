@@ -1,19 +1,83 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { EvaluationForm } from '../../components/EvaluationForm'
 import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { formatCpf, isValidCpf, stripCpf } from '../../lib/cpf'
-import { getClientIp } from '../../lib/clientIp'
 import { getCurrentPosition, haversineDistanceMeters } from '../../lib/geo'
-import { checkVoterEligibility, getConfig, listTeams, submitVote } from '../../services/db'
+import { checkVoterEligibility, getConfig, getTeam, submitEvaluation } from '../../services/db'
 import { EMPTY_EVALUATION, type EventConfig, type EvaluationInput, type Team } from '../../types'
 import './vote.css'
 
 type Step = 'location' | 'cpf' | 'vote' | 'done'
 
+const STEPS: Step[] = ['location', 'cpf', 'vote', 'done']
+const CPF_KEY = 'gamejam.cpf'
+
+function readSavedCpf(): string {
+  try {
+    return sessionStorage.getItem(CPF_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function saveCpf(cpf: string): void {
+  try {
+    sessionStorage.setItem(CPF_KEY, cpf)
+  } catch {
+    // sem armazenamento: a pessoa só digita o CPF de novo no próximo time.
+  }
+}
+
 export function VotePage() {
+  const [searchParams] = useSearchParams()
+  const teamId = searchParams.get('time')
+  const [loaded, setLoaded] = useState<{ teamId: string; team: Team | null } | null>(null)
+
+  useEffect(() => {
+    if (!teamId) return
+    let active = true
+    getTeam(teamId)
+      .then((team) => active && setLoaded({ teamId, team }))
+      .catch(() => active && setLoaded({ teamId, team: null }))
+    return () => {
+      active = false
+    }
+  }, [teamId])
+
+  // undefined = carregando; null = sem time (link sem ?time= ou time inexistente).
+  const team = !teamId ? null : loaded?.teamId === teamId ? loaded.team : undefined
+
+  if (team === undefined) {
+    return (
+      <div className="page container container--narrow vote-page">
+        <Loader />
+      </div>
+    )
+  }
+
+  if (team === null) {
+    return (
+      <div className="page container container--narrow vote-page">
+        <div className="card vote-card">
+          <h2>Escolha um time para avaliar</h2>
+          <p>Não encontramos o time deste link. Escaneie o QR code do time ou escolha na lista.</p>
+          <Link to="/" className="btn btn-primary btn-block">
+            Ver times
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // key: ao trocar de time, o fluxo (localização, CPF, notas) recomeça do zero.
+  return <VoteFlow key={team.id} team={team} />
+}
+
+function VoteFlow({ team }: { team: Team }) {
   const { notify } = useToast()
+
   const [step, setStep] = useState<Step>('location')
   const [config, setConfig] = useState<EventConfig | null>(null)
 
@@ -21,19 +85,15 @@ export function VotePage() {
   const [locationError, setLocationError] = useState<string | null>(null)
   const [distanceMeters, setDistanceMeters] = useState<number | null>(null)
 
-  const [cpfInput, setCpfInput] = useState('')
+  const [cpfInput, setCpfInput] = useState(readSavedCpf)
   const [cpfLoading, setCpfLoading] = useState(false)
   const [cpfError, setCpfError] = useState<string | null>(null)
 
-  const [ip, setIp] = useState<string | null>(null)
-  const [teams, setTeams] = useState<Team[] | null>(null)
-  const [teamIndex, setTeamIndex] = useState(0)
-  const [evaluations, setEvaluations] = useState<Record<string, EvaluationInput>>({})
+  const [evaluation, setEvaluation] = useState<EvaluationInput>(EMPTY_EVALUATION)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     getConfig().then(setConfig)
-    getClientIp().then(setIp)
   }, [])
 
   async function handleCheckLocation() {
@@ -73,39 +133,24 @@ export function VotePage() {
     setCpfLoading(true)
     setCpfError(null)
     try {
-      const currentIp = ip ?? (await getClientIp())
-      setIp(currentIp)
-      const eligibility = await checkVoterEligibility(cpfInput, currentIp)
+      const eligibility = await checkVoterEligibility(cpfInput, team.id)
       if (!eligibility.ok) {
         setCpfError(eligibility.reason)
         return
       }
-      const teamList = await listTeams()
-      if (teamList.length === 0) {
-        setCpfError('Nenhum time cadastrado para avaliação ainda.')
-        return
-      }
-      setTeams(teamList)
-      setTeamIndex(0)
+      saveCpf(stripCpf(cpfInput))
       setStep('vote')
+    } catch (error) {
+      setCpfError((error as Error).message)
     } finally {
       setCpfLoading(false)
     }
   }
 
-  function updateCurrentEvaluation(teamId: string, value: EvaluationInput) {
-    setEvaluations((prev) => ({ ...prev, [teamId]: value }))
-  }
-
-  async function handleSubmitVotes(finalEvaluations: Record<string, EvaluationInput>) {
-    if (!teams || !ip) return
+  async function handleSubmit() {
     setSubmitting(true)
     try {
-      await submitVote(
-        cpfInput,
-        ip,
-        teams.map((team) => ({ teamId: team.id, scores: finalEvaluations[team.id] ?? EMPTY_EVALUATION })),
-      )
+      await submitEvaluation(cpfInput, team.id, evaluation)
       setStep('done')
     } catch (error) {
       notify((error as Error).message, 'error')
@@ -114,27 +159,11 @@ export function VotePage() {
     }
   }
 
-  function handleNext() {
-    if (!teams) return
-    if (teamIndex < teams.length - 1) {
-      setTeamIndex((index) => index + 1)
-    } else {
-      handleSubmitVotes(evaluations)
-    }
-  }
-
-  function handleBack() {
-    setTeamIndex((index) => Math.max(0, index - 1))
-  }
-
-  const currentTeam = teams?.[teamIndex] ?? null
-  const currentValue = currentTeam ? (evaluations[currentTeam.id] ?? EMPTY_EVALUATION) : EMPTY_EVALUATION
-
   return (
     <div className="page container container--narrow vote-page">
       <div className="vote-stepper">
-        {(['location', 'cpf', 'vote', 'done'] as Step[]).map((s, index) => (
-          <div key={s} className={`vote-stepper__dot ${step === s ? 'is-active' : ''} ${stepIndex(step) > index ? 'is-done' : ''}`}>
+        {STEPS.map((s, index) => (
+          <div key={s} className={`vote-stepper__dot ${step === s ? 'is-active' : ''} ${STEPS.indexOf(step) > index ? 'is-done' : ''}`}>
             {index + 1}
           </div>
         ))}
@@ -144,7 +173,7 @@ export function VotePage() {
         <div className="card vote-card">
           <h2>Confirme sua presença no evento</h2>
           <p>
-            Para votar, precisamos confirmar que você está fisicamente no local da GameJam
+            Para avaliar <strong>{team.gameTitle}</strong>, precisamos confirmar que você está fisicamente no local da GameJam
             {config ? ` (raio de ${config.radiusMeters}m).` : '.'}
           </p>
           {locationError && <div className="alert alert--error">{locationError}</div>}
@@ -160,7 +189,7 @@ export function VotePage() {
       {step === 'cpf' && (
         <div className="card vote-card">
           <h2>Identifique-se com seu CPF</h2>
-          <p>Usamos seu CPF apenas para garantir um voto por pessoa. Ele precisa estar na lista de eleitores do evento.</p>
+          <p>Usamos seu CPF apenas para garantir uma avaliação por time. Ele precisa estar na lista de eleitores do evento.</p>
           <div className="field">
             <label htmlFor="cpf">CPF</label>
             <input
@@ -180,20 +209,14 @@ export function VotePage() {
         </div>
       )}
 
-      {step === 'vote' && currentTeam && teams && (
+      {step === 'vote' && (
         <div className="card vote-card vote-card--evaluation">
-          <span className="vote-progress">
-            Time {teamIndex + 1} de {teams.length}
-          </span>
-          <h2>{currentTeam.gameTitle}</h2>
-          <p className="vote-card__hint">{currentTeam.name}</p>
-          <EvaluationForm value={currentValue} onChange={(value) => updateCurrentEvaluation(currentTeam.id, value)} />
+          <h2>{team.gameTitle}</h2>
+          <p className="vote-card__hint">{team.name}</p>
+          <EvaluationForm value={evaluation} onChange={setEvaluation} />
           <div className="vote-nav">
-            <button className="btn btn-ghost" onClick={handleBack} disabled={teamIndex === 0 || submitting}>
-              Voltar
-            </button>
-            <button className="btn btn-primary" onClick={handleNext} disabled={submitting}>
-              {submitting ? 'Enviando...' : teamIndex < teams.length - 1 ? 'Próximo time' : 'Enviar avaliações'}
+            <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? 'Enviando...' : 'Enviar avaliação'}
             </button>
           </div>
         </div>
@@ -201,19 +224,16 @@ export function VotePage() {
 
       {step === 'done' && (
         <div className="card vote-card vote-card--success">
-          <h2>Voto registrado!</h2>
-          <p>Obrigada por avaliar os times da GameJam Delas. Confira o placar em tempo real.</p>
+          <h2>Avaliação registrada!</h2>
+          <p>Obrigada por avaliar {team.gameTitle}. Você pode avaliar os outros times escaneando o QR code de cada um.</p>
           <Link to="/resultados" className="btn btn-primary btn-block">
             Ver resultados
           </Link>
+          <Link to="/" className="btn btn-ghost btn-block">
+            Ver outros times
+          </Link>
         </div>
       )}
-
-      {step === 'vote' && teams === null && <Loader />}
     </div>
   )
-}
-
-function stepIndex(step: Step): number {
-  return ['location', 'cpf', 'vote', 'done'].indexOf(step)
 }

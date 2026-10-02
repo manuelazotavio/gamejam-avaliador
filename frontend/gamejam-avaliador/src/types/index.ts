@@ -9,6 +9,7 @@ export interface Voter {
   name: string
   imported: boolean
   hasVoted: boolean
+  evaluationCount: number
   votedAt: number | null
   ip: string | null
 }
@@ -63,23 +64,13 @@ export interface TeamResult {
   criterionScores: CriterionScore[]
 }
 
-export interface VoteRecord {
-  id: string
-  cpf: string
-  ip: string
-  createdAt: number
-}
-
 export interface EventConfig {
   latitude: number
   longitude: number
   radiusMeters: number
   eventName: string
   votingOpen: boolean
-}
-
-export interface AdminSession {
-  authenticated: boolean
+  oneVotePerIp: boolean
 }
 
 export interface GeoCheckResult {
