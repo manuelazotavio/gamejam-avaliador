@@ -1,0 +1,73 @@
+.star-rating {
+  display: inline-flex;
+  gap: 4px;
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.star-rating:focus-visible {
+  box-shadow: 0 0 0 3px rgba(229, 9, 127, 0.25);
+}
+
+.star-rating__star {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.star-rating__star svg {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+
+.star-rating__empty {
+  fill: var(--sky);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.star-rating__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.star-rating__fill path {
+  fill: var(--yellow);
+  stroke: var(--orange);
+  stroke-width: 1;
+}
+
+.star-rating__hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.star-rating__hit--left {
+  left: 0;
+}
+
+.star-rating__hit--right {
+  right: 0;
+}
+
+.star-rating.is-readonly .star-rating__hit {
+  cursor: default;
+}
+
+@media (max-width: 380px) {
+  .star-rating__star,
+  .star-rating__star svg {
+    width: 34px;
+    height: 34px;
+  }
+}

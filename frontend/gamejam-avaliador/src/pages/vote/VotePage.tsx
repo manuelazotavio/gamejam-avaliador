@@ -219,7 +219,7 @@ function VoteFlow({ team }: { team: Team }) {
       {step === 'vote' && (
         <div className="card vote-card vote-card--evaluation">
           <h2>{team.gameTitle || team.name}</h2>
-          <p className="vote-card__hint">{team.name}</p>
+          {team.gameTitle && <p className="vote-card__hint">{team.name}</p>}
           <EvaluationForm value={evaluation} onChange={setEvaluation} />
           <div className="vote-nav">
             <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={submitting}>

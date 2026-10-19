@@ -1,4 +1,5 @@
-import { CRITERIA, type EvaluationInput } from '../types'
+import { CRITERIA, STAR_MAX, type EvaluationInput } from '../types'
+import { StarRating } from './StarRating'
 import './EvaluationForm.css'
 
 interface EvaluationFormProps {
@@ -7,8 +8,14 @@ interface EvaluationFormProps {
   readOnly?: boolean
 }
 
+function formatPoints(points: number): string {
+  return points.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+}
+
 export function EvaluationForm({ value, onChange, readOnly = false }: EvaluationFormProps) {
-  const total = CRITERIA.reduce((sum, criterion) => sum + value[criterion.key], 0)
+  // Estrelas viram pontos pelo peso do critério, como no placar.
+  const pointsFor = (key: keyof EvaluationInput, max: number) => (value[key] / STAR_MAX) * max
+  const total = CRITERIA.reduce((sum, criterion) => sum + pointsFor(criterion.key, criterion.max), 0)
 
   return (
     <div className="evaluation-form">
@@ -17,22 +24,20 @@ export function EvaluationForm({ value, onChange, readOnly = false }: Evaluation
           <div className="evaluation-form__label">
             <span>{criterion.label}</span>
             <strong>
-              {value[criterion.key]}/{criterion.max}
+              {formatPoints(pointsFor(criterion.key, criterion.max))}/{criterion.max}
             </strong>
           </div>
-          <input
-            type="range"
-            min={0}
-            max={criterion.max}
+          <StarRating
+            label={criterion.label}
             value={value[criterion.key]}
-            disabled={readOnly}
-            onChange={(event) => onChange({ ...value, [criterion.key]: Number(event.target.value) })}
+            readOnly={readOnly}
+            onChange={(stars) => onChange({ ...value, [criterion.key]: stars })}
           />
         </div>
       ))}
       <div className="evaluation-form__total">
         <span>Total</span>
-        <strong>{total}/100</strong>
+        <strong>{formatPoints(total)}/100</strong>
       </div>
     </div>
   )

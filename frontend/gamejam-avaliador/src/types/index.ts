@@ -14,6 +14,9 @@ export interface Voter {
   ip: string | null
 }
 
+// Notas em estrelas: 0 a STAR_MAX, com meia estrela.
+export const STAR_MAX = 5
+
 export interface EvaluationInput {
   creativityInnovation: number
   technicalQuality: number
@@ -26,6 +29,7 @@ export interface EvaluationInput {
 export interface CriterionMeta {
   key: keyof EvaluationInput
   label: string
+  // Peso do critério em pontos (a nota final soma 100).
   max: number
 }
 

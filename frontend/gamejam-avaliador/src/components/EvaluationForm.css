@@ -30,11 +30,6 @@
   white-space: nowrap;
 }
 
-.evaluation-form input[type='range'] {
-  width: 100%;
-  accent-color: var(--pink);
-}
-
 .evaluation-form__total {
   display: flex;
   align-items: center;

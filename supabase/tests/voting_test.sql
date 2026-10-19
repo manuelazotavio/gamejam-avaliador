@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(17);
 
 delete from public.teams;
 
@@ -18,21 +18,21 @@ insert into public.teams (id, name, game_title) values
   ('33333333-3333-3333-3333-333333333333', 'Garotas Glitch', 'Falha Fatal'),
   ('44444444-4444-4444-4444-444444444444', 'Sem Votos', 'Jogo Fantasma');
 
-create function pg_temp.scores(c int, t int, th int, i int, g int, a int)
+create function pg_temp.scores(c numeric, t numeric, th numeric, i numeric, g numeric, a numeric)
 returns jsonb language sql as $$
   select jsonb_build_object(
     'creativityInnovation', c, 'technicalQuality', t, 'themeAdequacy', th,
     'inclusionDiversityAccessibility', i, 'gameplayFun', g, 'artSoundOriginality', a)
 $$;
 
--- Nota final é a soma das médias por critério.
+-- Estrelas (0 a 5) viram pontos pelo peso do critério; nota final é a soma.
 select lives_ok(
   $$ select public.submit_evaluation('00000000001', '10.0.0.1', '11111111-1111-1111-1111-111111111111',
-       pg_temp.scores(10, 10, 15, 15, 10, 10)) $$,
+       pg_temp.scores(3.5, 3.5, 3.5, 3.5, 3.5, 3.5)) $$,
   'eleitora autorizada avalia um time'
 );
 select public.submit_evaluation('00000000002', '10.0.0.5', '11111111-1111-1111-1111-111111111111',
-  pg_temp.scores(15, 15, 20, 20, 15, 15));
+  pg_temp.scores(5, 5, 5, 5, 5, 5));
 
 select is(
   (select final_score from public.team_results where team_name = 'Pixel Bruxas'),
@@ -48,13 +48,13 @@ select is(
 -- A mesma eleitora avalia outro time depois.
 select lives_ok(
   $$ select public.submit_evaluation('00000000001', '10.0.0.1', '22222222-2222-2222-2222-222222222222',
-       pg_temp.scores(15, 0, 0, 0, 0, 0)) $$,
+       pg_temp.scores(5, 0, 0, 0, 0, 0)) $$,
   'a mesma eleitora avalia outro time'
 );
 
--- Empate em 15 resolvido pela criatividade: Byte Me (15, 0...) x Garotas Glitch (0, 15...).
+-- Empate em 15 pontos resolvido pela criatividade: Byte Me (5★, 0...) x Garotas Glitch (0, 5★...).
 select public.submit_evaluation('00000000003', null, '33333333-3333-3333-3333-333333333333',
-  pg_temp.scores(0, 15, 0, 0, 0, 0));
+  pg_temp.scores(0, 5, 0, 0, 0, 0));
 
 select results_eq(
   $$ select team_name, rank from public.team_results order by rank $$,
@@ -65,6 +65,13 @@ select is(
   (select final_score from public.team_results where team_name = 'Sem Votos'),
   0::double precision,
   'time sem avaliações tem nota zero'
+);
+
+select throws_ok(
+  $$ select public.submit_evaluation('00000000004', null, '44444444-4444-4444-4444-444444444444',
+       pg_temp.scores(3.3, 0, 0, 0, 0, 0)) $$,
+  'P0001', 'Notas inválidas. Confira os valores de cada critério.',
+  'nota fora do passo de meia estrela é rejeitada'
 );
 
 -- Regras de elegibilidade.
@@ -88,7 +95,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ select public.submit_evaluation('00000000004', null, '11111111-1111-1111-1111-111111111111',
-       pg_temp.scores(16, 0, 0, 0, 0, 0)) $$,
+       pg_temp.scores(5.5, 0, 0, 0, 0, 0)) $$,
   'P0001', 'Notas inválidas. Confira os valores de cada critério.',
   'nota acima do máximo é rejeitada'
 );
