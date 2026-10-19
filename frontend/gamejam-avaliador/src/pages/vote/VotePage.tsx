@@ -5,29 +5,24 @@ import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { formatCpf, isValidCpf, stripCpf } from '../../lib/cpf'
 import { getCurrentPosition, haversineDistanceMeters } from '../../lib/geo'
+import {
+  forgetVoterCpf,
+  isLocationFresh,
+  markLocationVerified,
+  markTeamEvaluated,
+  readVoterSession,
+  saveVoterCpf,
+} from '../../lib/voterSession'
 import { checkVoterEligibility, getConfig, getTeam, submitEvaluation } from '../../services/db'
 import { EMPTY_EVALUATION, type EventConfig, type EvaluationInput, type Team } from '../../types'
 import './vote.css'
 
-type Step = 'location' | 'cpf' | 'vote' | 'done'
+type Step = 'loading' | 'location' | 'cpf' | 'vote' | 'done'
 
 const STEPS: Step[] = ['location', 'cpf', 'vote', 'done']
-const CPF_KEY = 'gamejam.cpf'
 
-function readSavedCpf(): string {
-  try {
-    return sessionStorage.getItem(CPF_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-function saveCpf(cpf: string): void {
-  try {
-    sessionStorage.setItem(CPF_KEY, cpf)
-  } catch {
-    // sem armazenamento: a pessoa só digita o CPF de novo no próximo time.
-  }
+function maskCpf(cpf: string): string {
+  return `***.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-**`
 }
 
 export function VotePage() {
@@ -71,32 +66,69 @@ export function VotePage() {
     )
   }
 
-  // key: ao trocar de time, o fluxo (localização, CPF, notas) recomeça do zero.
+  // key: ao trocar de time, o fluxo recomeça (CPF e localização salvos são reaproveitados).
   return <VoteFlow key={team.id} team={team} />
 }
 
 function VoteFlow({ team }: { team: Team }) {
   const { notify } = useToast()
 
-  const [step, setStep] = useState<Step>('location')
+  const [step, setStep] = useState<Step>('loading')
   const [config, setConfig] = useState<EventConfig | null>(null)
 
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [distanceMeters, setDistanceMeters] = useState<number | null>(null)
 
-  const [cpfInput, setCpfInput] = useState(readSavedCpf)
+  const [cpfInput, setCpfInput] = useState(() => readVoterSession().cpf ?? '')
   const [cpfLoading, setCpfLoading] = useState(false)
   const [cpfError, setCpfError] = useState<string | null>(null)
 
   const [evaluation, setEvaluation] = useState<EvaluationInput>(EMPTY_EVALUATION)
   const [submitting, setSubmitting] = useState(false)
 
+  // Confere o CPF neste time e segue para as notas, ou volta para a etapa do CPF com o motivo.
+  async function verifyCpf(cpf: string): Promise<void> {
+    setCpfLoading(true)
+    setCpfError(null)
+    try {
+      const eligibility = await checkVoterEligibility(cpf, team.id)
+      if (!eligibility.ok) {
+        setCpfError(eligibility.reason)
+        setStep('cpf')
+        return
+      }
+      saveVoterCpf(stripCpf(cpf))
+      setStep('vote')
+    } catch (error) {
+      setCpfError((error as Error).message)
+      setStep('cpf')
+    } finally {
+      setCpfLoading(false)
+    }
+  }
+
+  function continueAfterLocation() {
+    const savedCpf = readVoterSession().cpf
+    if (savedCpf) {
+      setStep('loading')
+      void verifyCpf(savedCpf)
+    } else {
+      setStep('cpf')
+    }
+  }
+
   useEffect(() => {
     getConfig().then((loaded) => {
       setConfig(loaded)
-      if (!loaded.requireLocation) setStep((current) => (current === 'location' ? 'cpf' : current))
+      if (loaded.requireLocation && !isLocationFresh(readVoterSession())) {
+        setStep('location')
+      } else {
+        continueAfterLocation()
+      }
     })
+    // Só na montagem: cada time tem seu próprio VoteFlow (key).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const steps = config?.requireLocation === false ? STEPS.filter((s) => s !== 'location') : STEPS
@@ -113,7 +145,8 @@ function VoteFlow({ team }: { team: Team }) {
       )
       setDistanceMeters(distance)
       if (distance <= config.radiusMeters) {
-        setStep('cpf')
+        markLocationVerified()
+        continueAfterLocation()
       } else {
         setLocationError(
           `Você está a ${Math.round(distance)}m do local do evento. É preciso estar a até ${config.radiusMeters}m para votar.`,
@@ -130,32 +163,26 @@ function VoteFlow({ team }: { team: Team }) {
     }
   }
 
-  async function handleCheckCpf() {
+  function handleCheckCpf() {
     if (!isValidCpf(cpfInput)) {
       setCpfError('Digite um CPF válido.')
       return
     }
-    setCpfLoading(true)
+    void verifyCpf(cpfInput)
+  }
+
+  function handleChangeCpf() {
+    forgetVoterCpf()
+    setCpfInput('')
     setCpfError(null)
-    try {
-      const eligibility = await checkVoterEligibility(cpfInput, team.id)
-      if (!eligibility.ok) {
-        setCpfError(eligibility.reason)
-        return
-      }
-      saveCpf(stripCpf(cpfInput))
-      setStep('vote')
-    } catch (error) {
-      setCpfError((error as Error).message)
-    } finally {
-      setCpfLoading(false)
-    }
+    setStep('cpf')
   }
 
   async function handleSubmit() {
     setSubmitting(true)
     try {
       await submitEvaluation(cpfInput, team.id, evaluation)
+      markTeamEvaluated(team.id)
       setStep('done')
     } catch (error) {
       notify((error as Error).message, 'error')
@@ -166,25 +193,27 @@ function VoteFlow({ team }: { team: Team }) {
 
   return (
     <div className="page container container--narrow vote-page">
-      <div className="vote-stepper">
-        {steps.map((s, index) => (
-          <div key={s} className={`vote-stepper__dot ${step === s ? 'is-active' : ''} ${steps.indexOf(step) > index ? 'is-done' : ''}`}>
-            {index + 1}
-          </div>
-        ))}
-      </div>
+      {step !== 'loading' && (
+        <div className="vote-stepper">
+          {steps.map((s, index) => (
+            <div key={s} className={`vote-stepper__dot ${step === s ? 'is-active' : ''} ${steps.indexOf(step) > index ? 'is-done' : ''}`}>
+              {index + 1}
+            </div>
+          ))}
+        </div>
+      )}
 
-      {step === 'location' && !config && <Loader />}
+      {step === 'loading' && <Loader />}
 
       {step === 'location' && config && (
         <div className="card vote-card">
           <h2>Confirme sua presença no evento</h2>
           <p>
             Para avaliar <strong>{team.gameTitle || team.name}</strong>, precisamos confirmar que você está fisicamente no local da GameJam
-            {config ? ` (raio de ${config.radiusMeters}m).` : '.'}
+            {` (raio de ${config.radiusMeters}m).`}
           </p>
           {locationError && <div className="alert alert--error">{locationError}</div>}
-          <button className="btn btn-primary btn-block" onClick={handleCheckLocation} disabled={locationLoading || !config}>
+          <button className="btn btn-primary btn-block" onClick={handleCheckLocation} disabled={locationLoading}>
             {locationLoading ? 'Verificando localização...' : 'Verificar minha localização'}
           </button>
           {distanceMeters !== null && (
@@ -196,7 +225,10 @@ function VoteFlow({ team }: { team: Team }) {
       {step === 'cpf' && (
         <div className="card vote-card">
           <h2>Identifique-se com seu CPF</h2>
-          <p>Usamos seu CPF apenas para garantir uma avaliação por time. {config?.votersOnly !== false && 'Ele precisa estar na lista de eleitores do evento.'}</p>
+          <p>
+            Você só precisa informar uma vez: depois é só avaliar os outros times.{' '}
+            {config?.votersOnly !== false && 'Ele precisa estar na lista de eleitores do evento.'}
+          </p>
           <div className="field">
             <label htmlFor="cpf">CPF</label>
             <input
@@ -213,6 +245,9 @@ function VoteFlow({ team }: { team: Team }) {
           <button className="btn btn-primary btn-block" onClick={handleCheckCpf} disabled={cpfLoading}>
             {cpfLoading ? 'Validando...' : 'Continuar'}
           </button>
+          <Link to="/" className="btn btn-ghost btn-block">
+            Ver outros times
+          </Link>
         </div>
       )}
 
@@ -226,18 +261,27 @@ function VoteFlow({ team }: { team: Team }) {
               {submitting ? 'Enviando...' : 'Enviar avaliação'}
             </button>
           </div>
+          <p className="vote-identity">
+            Avaliando com o CPF {maskCpf(stripCpf(cpfInput))} ·{' '}
+            <button type="button" className="vote-identity__change" onClick={handleChangeCpf}>
+              Trocar CPF
+            </button>
+          </p>
         </div>
       )}
 
       {step === 'done' && (
         <div className="card vote-card vote-card--success">
           <h2>Avaliação registrada!</h2>
-          <p>Obrigada por avaliar {team.gameTitle || team.name}. Você pode avaliar os outros times escaneando o QR code de cada um.</p>
-          <Link to="/resultados" className="btn btn-primary btn-block">
-            Ver resultados
+          <p>
+            Obrigada por avaliar {team.gameTitle || team.name}. Para avaliar os outros times, escolha na lista ou escaneie o QR
+            code: não precisa digitar o CPF de novo.
+          </p>
+          <Link to="/" className="btn btn-primary btn-block">
+            Avaliar outro time
           </Link>
-          <Link to="/" className="btn btn-ghost btn-block">
-            Ver outros times
+          <Link to="/resultados" className="btn btn-ghost btn-block">
+            Ver resultados
           </Link>
         </div>
       )}

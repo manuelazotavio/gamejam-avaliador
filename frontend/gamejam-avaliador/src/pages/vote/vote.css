@@ -91,3 +91,20 @@
 .vote-nav .btn-primary {
   flex: 1;
 }
+
+.vote-identity {
+  font-size: 13px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.vote-identity__change {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--magenta);
+  text-decoration: underline;
+  cursor: pointer;
+}

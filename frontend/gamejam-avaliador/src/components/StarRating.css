@@ -1,6 +1,8 @@
 .star-rating {
-  display: inline-flex;
-  gap: 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
   border-radius: var(--radius-sm);
   outline: none;
 }
@@ -11,15 +13,15 @@
 
 .star-rating__star {
   position: relative;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
+  flex: 0 1 64px;
+  aspect-ratio: 1;
+  min-width: 0;
 }
 
 .star-rating__star svg {
   display: block;
-  width: 40px;
-  height: 40px;
+  width: 100%;
+  height: 100%;
 }
 
 .star-rating__empty {
@@ -35,6 +37,13 @@
   pointer-events: none;
 }
 
+/* O svg de dentro mantém o tamanho da estrela inteira; o span corta pela largura. */
+.star-rating__fill svg {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1;
+}
+
 .star-rating__fill path {
   fill: var(--yellow);
   stroke: var(--orange);
@@ -43,31 +52,14 @@
 
 .star-rating__hit {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50%;
+  inset: 0;
   padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.star-rating__hit--left {
-  left: 0;
-}
-
-.star-rating__hit--right {
-  right: 0;
-}
-
-.star-rating.is-readonly .star-rating__hit {
-  cursor: default;
-}
-
-@media (max-width: 380px) {
-  .star-rating__star,
-  .star-rating__star svg {
-    width: 34px;
-    height: 34px;
-  }
+.star-rating__star:active svg {
+  transform: scale(0.94);
 }

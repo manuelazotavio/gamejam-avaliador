@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { BrandMark } from '../components/BrandMark'
 import { Loader } from '../components/Loader'
 import { TeamCard } from '../components/TeamCard'
+import { readVoterSession } from '../lib/voterSession'
 import { listTeams } from '../services/db'
 import type { Team } from '../types'
 import './TeamsPage.css'
 
 export function TeamsPage() {
   const [teams, setTeams] = useState<Team[] | null>(null)
+  const [evaluated] = useState(() => new Set(readVoterSession().evaluated))
 
   useEffect(() => {
     listTeams().then(setTeams)
@@ -42,7 +44,10 @@ export function TeamsPage() {
           <div className="teams-grid">
             {teams.map((team) => (
               <Link key={team.id} to={`/votar?time=${team.id}`} className="teams-grid__link">
-                <TeamCard team={team} />
+                <TeamCard
+                  team={team}
+                  trailing={evaluated.has(team.id) && <span className="badge badge--good">✓ Avaliado</span>}
+                />
               </Link>
             ))}
           </div>

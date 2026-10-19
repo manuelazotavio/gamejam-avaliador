@@ -16,13 +16,15 @@ function clamp(value: number): number {
   return Math.min(STAR_MAX, Math.max(0, value))
 }
 
-export function StarRating({ value, onChange, label, readOnly = false }: StarRatingProps) {
-  function select(next: number) {
-    if (readOnly) return
-    // Clicar de novo na mesma nota zera o critério.
-    onChange(next === value ? 0 : next)
-  }
+// Tocar numa estrela dá a nota cheia; tocar de novo alterna para meia estrela.
+// Na primeira estrela o ciclo passa pelo zero: 1 → ½ → 0 → 1.
+function nextValue(current: number, star: number): number {
+  if (current === star) return star - 0.5
+  if (current === star - 0.5) return star === 1 ? 0 : star
+  return star
+}
 
+export function StarRating({ value, onChange, label, readOnly = false }: StarRatingProps) {
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (readOnly) return
     const steps: Record<string, number> = {
@@ -53,9 +55,10 @@ export function StarRating({ value, onChange, label, readOnly = false }: StarRat
       onKeyDown={handleKeyDown}
     >
       {Array.from({ length: STAR_MAX }, (_, index) => {
+        const star = index + 1
         const fill = Math.min(1, Math.max(0, value - index))
         return (
-          <span key={index} className="star-rating__star">
+          <span key={star} className="star-rating__star">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d={STAR_PATH} className="star-rating__empty" />
             </svg>
@@ -65,22 +68,13 @@ export function StarRating({ value, onChange, label, readOnly = false }: StarRat
               </svg>
             </span>
             {!readOnly && (
-              <>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  className="star-rating__hit star-rating__hit--left"
-                  aria-hidden="true"
-                  onClick={() => select(index + 0.5)}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  className="star-rating__hit star-rating__hit--right"
-                  aria-hidden="true"
-                  onClick={() => select(index + 1)}
-                />
-              </>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="star-rating__hit"
+                aria-hidden="true"
+                onClick={() => onChange(nextValue(value, star))}
+              />
             )}
           </span>
         )
