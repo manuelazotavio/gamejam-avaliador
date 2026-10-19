@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(14);
+select plan(16);
 
 delete from public.teams;
 
@@ -108,6 +108,19 @@ select is(
   public.check_voter('00000000001', '10.0.0.1', '33333333-3333-3333-3333-333333333333'),
   null,
   'com one_vote_per_ip, o mesmo CPF segue avaliando outros times pelo mesmo IP'
+);
+
+select is(
+  public.check_voter('00000000099', null, '11111111-1111-1111-1111-111111111111'),
+  'Este CPF não está na lista de eleitores autorizados do evento.',
+  'com voters_only, CPF fora da lista é bloqueado'
+);
+
+update public.event_config set voters_only = false;
+select is(
+  public.check_voter('00000000099', null, '11111111-1111-1111-1111-111111111111'),
+  null,
+  'sem voters_only, CPF fora da lista pode avaliar'
 );
 
 update public.event_config set voting_open = false;

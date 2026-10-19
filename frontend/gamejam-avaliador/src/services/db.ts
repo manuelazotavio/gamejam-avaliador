@@ -207,6 +207,8 @@ interface EventConfigRow {
   radius_meters: number
   voting_open: boolean
   one_vote_per_ip: boolean
+  require_location: boolean
+  voters_only: boolean
 }
 
 function toConfig(row: EventConfigRow): EventConfig {
@@ -217,10 +219,12 @@ function toConfig(row: EventConfigRow): EventConfig {
     radiusMeters: row.radius_meters,
     votingOpen: row.voting_open,
     oneVotePerIp: row.one_vote_per_ip,
+    requireLocation: row.require_location,
+    votersOnly: row.voters_only,
   }
 }
 
-const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip'
+const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only'
 
 export async function getConfig(): Promise<EventConfig> {
   return toConfig(unwrap(await supabase.from('event_config').select(CONFIG_COLUMNS).eq('id', 1).single()))
@@ -237,6 +241,8 @@ export async function updateConfig(config: EventConfig): Promise<EventConfig> {
         radius_meters: config.radiusMeters,
         voting_open: config.votingOpen,
         one_vote_per_ip: config.oneVotePerIp,
+        require_location: config.requireLocation,
+        voters_only: config.votersOnly,
       })
       .eq('id', 1)
       .select(CONFIG_COLUMNS)

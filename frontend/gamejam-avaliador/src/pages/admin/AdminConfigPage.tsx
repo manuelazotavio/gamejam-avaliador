@@ -5,6 +5,26 @@ import { getCurrentPosition } from '../../lib/geo'
 import { getConfig, updateConfig } from '../../services/db'
 import type { EventConfig } from '../../types'
 
+interface ToggleProps {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  label: string
+  hint?: string
+}
+
+function Toggle({ checked, onChange, label, hint }: ToggleProps) {
+  return (
+    <label className="toggle">
+      <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="toggle__track" aria-hidden="true" />
+      <span className="toggle__text">
+        {label}
+        {hint && <small>{hint}</small>}
+      </span>
+    </label>
+  )
+}
+
 export function AdminConfigPage() {
   const { notify } = useToast()
   const [config, setConfig] = useState<EventConfig | null>(null)
@@ -110,45 +130,31 @@ export function AdminConfigPage() {
           />
         </div>
 
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 20,
-            fontSize: 14,
-            color: 'var(--text-dim)',
-          }}
-        >
-          <input
-            type="checkbox"
+        <div className="toggle-list">
+          <Toggle
             checked={config.votingOpen}
-            onChange={(e) => setConfig({ ...config, votingOpen: e.target.checked })}
+            onChange={(votingOpen) => setConfig({ ...config, votingOpen })}
+            label="Votação aberta"
           />
-          Votação aberta
-        </label>
-
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-            marginBottom: 20,
-            fontSize: 14,
-            color: 'var(--text-dim)',
-          }}
-        >
-          <input
-            type="checkbox"
+          <Toggle
+            checked={config.requireLocation}
+            onChange={(requireLocation) => setConfig({ ...config, requireLocation })}
+            label="Exigir verificação de localização"
+            hint="Desligado, qualquer pessoa vota sem precisar estar no raio do evento."
+          />
+          <Toggle
+            checked={config.votersOnly}
+            onChange={(votersOnly) => setConfig({ ...config, votersOnly })}
+            label="Aceitar só eleitoras cadastradas"
+            hint="Desligado, qualquer CPF válido pode votar, mesmo fora da lista."
+          />
+          <Toggle
             checked={config.oneVotePerIp}
-            onChange={(e) => setConfig({ ...config, oneVotePerIp: e.target.checked })}
+            onChange={(oneVotePerIp) => setConfig({ ...config, oneVotePerIp })}
+            label="Permitir só um voto por rede (IP)"
+            hint="Deixe desligado se o público vai votar pelo mesmo Wi-Fi do evento."
           />
-          <span>
-            Permitir só um voto por rede (IP)
-            <br />
-            <small>Deixe desligado se o público vai votar pelo mesmo Wi-Fi do evento.</small>
-          </span>
-        </label>
+        </div>
 
         <button type="submit" className="btn btn-primary" disabled={saving}>
           {saving ? 'Salvando...' : 'Salvar configurações'}

@@ -71,6 +71,8 @@ export interface EventConfig {
   eventName: string
   votingOpen: boolean
   oneVotePerIp: boolean
+  requireLocation: boolean
+  votersOnly: boolean
 }
 
 export interface GeoCheckResult {

@@ -93,8 +93,13 @@ function VoteFlow({ team }: { team: Team }) {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    getConfig().then(setConfig)
+    getConfig().then((loaded) => {
+      setConfig(loaded)
+      if (!loaded.requireLocation) setStep((current) => (current === 'location' ? 'cpf' : current))
+    })
   }, [])
+
+  const steps = config?.requireLocation === false ? STEPS.filter((s) => s !== 'location') : STEPS
 
   async function handleCheckLocation() {
     if (!config) return
@@ -162,14 +167,16 @@ function VoteFlow({ team }: { team: Team }) {
   return (
     <div className="page container container--narrow vote-page">
       <div className="vote-stepper">
-        {STEPS.map((s, index) => (
-          <div key={s} className={`vote-stepper__dot ${step === s ? 'is-active' : ''} ${STEPS.indexOf(step) > index ? 'is-done' : ''}`}>
+        {steps.map((s, index) => (
+          <div key={s} className={`vote-stepper__dot ${step === s ? 'is-active' : ''} ${steps.indexOf(step) > index ? 'is-done' : ''}`}>
             {index + 1}
           </div>
         ))}
       </div>
 
-      {step === 'location' && (
+      {step === 'location' && !config && <Loader />}
+
+      {step === 'location' && config && (
         <div className="card vote-card">
           <h2>Confirme sua presença no evento</h2>
           <p>
@@ -189,7 +196,7 @@ function VoteFlow({ team }: { team: Team }) {
       {step === 'cpf' && (
         <div className="card vote-card">
           <h2>Identifique-se com seu CPF</h2>
-          <p>Usamos seu CPF apenas para garantir uma avaliação por time. Ele precisa estar na lista de eleitores do evento.</p>
+          <p>Usamos seu CPF apenas para garantir uma avaliação por time. {config?.votersOnly !== false && 'Ele precisa estar na lista de eleitores do evento.'}</p>
           <div className="field">
             <label htmlFor="cpf">CPF</label>
             <input
