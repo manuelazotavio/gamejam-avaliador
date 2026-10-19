@@ -108,3 +108,8 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.vote-star-tip {
+  text-align: center;
+  font-weight: 600;
+}

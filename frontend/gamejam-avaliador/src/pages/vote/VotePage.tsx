@@ -255,6 +255,7 @@ function VoteFlow({ team }: { team: Team }) {
 
       {step === 'vote' && (
         <div className="card vote-card vote-card--evaluation">
+          <div className="alert alert--info vote-star-tip">⭐ Clique duas vezes na estrela para dar meia estrela.</div>
           <h2>{team.gameTitle || team.name}</h2>
           {team.gameTitle && <p className="vote-card__hint">{team.name}</p>}
           <EvaluationForm value={evaluation} onChange={setEvaluation} />
