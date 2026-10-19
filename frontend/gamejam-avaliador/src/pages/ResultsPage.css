@@ -1,7 +1,10 @@
 .results-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 8px 24px;
+  box-shadow: var(--shadow-soft);
 }
 
 .results-row {
@@ -18,9 +21,17 @@
 
 .results-row__rank {
   font-family: var(--font-display);
-  font-size: 20px;
-  color: var(--gold);
-  width: 36px;
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--purple);
+  background: var(--yellow);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .results-row__info {
@@ -33,6 +44,8 @@
 
 .results-row__info strong {
   font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--purple);
   font-size: 16px;
 }
 
@@ -49,6 +62,7 @@
 
 .results-row__average {
   font-family: var(--font-display);
+  font-weight: 900;
   font-size: 18px;
   color: var(--pink-dim);
 }

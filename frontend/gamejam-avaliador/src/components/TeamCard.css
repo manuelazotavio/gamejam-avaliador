@@ -1,10 +1,21 @@
 .team-card {
   position: relative;
-  border: 1px solid var(--border);
-  padding: 26px;
+  height: 100%;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--team-color, var(--magenta));
+  box-shadow: 6px 6px 0 var(--team-color, var(--magenta));
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.teams-grid__link:hover .team-card,
+.teams-grid__link:focus-visible .team-card {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--team-color, var(--magenta));
 }
 
 .team-card__rank {
@@ -12,26 +23,31 @@
   top: 16px;
   right: 18px;
   font-family: var(--font-display);
+  font-weight: 800;
   font-size: 13px;
   color: var(--text-faint);
 }
 
 .team-card__header h3 {
   font-size: 22px;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
 .team-card__badge {
   display: inline-flex;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: var(--team-color, var(--pink));
+  color: #fff;
+  background: var(--team-color, var(--magenta));
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
 }
 
 .team-card__trailing {
-  margin-top: 4px;
+  margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }

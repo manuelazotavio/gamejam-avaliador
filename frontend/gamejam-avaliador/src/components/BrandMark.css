@@ -1,0 +1,61 @@
+.brand-mark {
+  --brand-size: 15px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  font-family: var(--font-brand);
+  line-height: 0.92;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.brand-mark--sm {
+  --brand-size: 13px;
+}
+
+.brand-mark--lg {
+  --brand-size: 44px;
+}
+
+.brand-mark__top {
+  font-size: calc(var(--brand-size) * 1.32);
+  color: currentColor;
+  text-align: center;
+}
+
+.brand-mark__bottom {
+  display: flex;
+  margin-top: calc(var(--brand-size) * 0.08);
+}
+
+.brand-mark__tile {
+  flex: 1;
+  text-align: center;
+  font-size: calc(var(--brand-size) * 1.5);
+  padding: calc(var(--brand-size) * 0.04) calc(var(--brand-size) * 0.06) 0;
+}
+
+.brand-mark__tile--0 {
+  background: var(--yellow);
+  color: var(--lime);
+}
+
+.brand-mark__tile--1 {
+  background: var(--cyan);
+  color: var(--yellow);
+}
+
+.brand-mark__tile--2 {
+  background: var(--yellow);
+  color: var(--purple);
+}
+
+.brand-mark__tile--3 {
+  background: var(--purple);
+  color: var(--cyan);
+}
+
+.brand-mark__tile--4 {
+  background: var(--orange);
+  color: var(--yellow);
+}

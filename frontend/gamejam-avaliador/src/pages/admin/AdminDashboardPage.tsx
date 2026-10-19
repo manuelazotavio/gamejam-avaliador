@@ -31,7 +31,7 @@ export function AdminDashboardPage() {
       <div className="admin-header">
         <div>
           <span className="eyebrow">visão geral</span>
-          <h1 style={{ fontSize: 30, marginTop: 8 }}>Painel da GameJam Delas</h1>
+          <h1 style={{ fontSize: 30, marginTop: 8 }}>Painel da Ciência Delas</h1>
         </div>
       </div>
 

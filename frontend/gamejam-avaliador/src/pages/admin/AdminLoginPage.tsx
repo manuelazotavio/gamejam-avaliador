@@ -35,7 +35,7 @@ export function AdminLoginPage() {
     <div className="page container container--narrow">
       <div className="card" style={{ maxWidth: 380, margin: '40px auto 0', textAlign: 'center' }}>
         <h2 style={{ fontSize: 22, marginBottom: 6 }}>Painel administrativo</h2>
-        <p style={{ marginBottom: 20 }}>Acesso restrito à organização da GameJam Delas.</p>
+        <p style={{ marginBottom: 20 }}>Acesso restrito à organização da Ciência Delas.</p>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="field">
             <label htmlFor="email">E-mail</label>

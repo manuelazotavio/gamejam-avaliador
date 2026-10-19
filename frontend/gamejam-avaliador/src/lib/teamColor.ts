@@ -1,4 +1,4 @@
-const PALETTE = ['var(--pink)', 'var(--violet)', 'var(--teal)', 'var(--gold)', 'var(--green)', 'var(--red)']
+const PALETTE = ['var(--magenta)', 'var(--cyan-dim)', 'var(--purple)', 'var(--orange)', '#6f9a1a', '#c2187a']
 
 export function colorForTeam(id: string): string {
   let hash = 0

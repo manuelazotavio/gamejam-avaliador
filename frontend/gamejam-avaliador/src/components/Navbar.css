@@ -2,31 +2,37 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  backdrop-filter: blur(14px);
-  background: rgba(255, 242, 248, 0.8);
-  border-bottom: 1px solid var(--border);
+  background: var(--magenta);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--yellow);
 }
 
 .navbar__inner {
   display: flex;
   align-items: center;
   gap: 16px;
-  height: 76px;
+  height: 80px;
 }
 
 .navbar__brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   text-decoration: none;
-  color: var(--text);
-  font-family: var(--font-display);
-  font-size: 18px;
+  color: #fff;
   white-space: nowrap;
 }
 
-.navbar__brand strong {
-  color: var(--pink);
+.navbar__tag {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #fff;
+  padding: 6px 10px;
+  border: 2px solid var(--yellow);
+  border-radius: 6px;
 }
 
 .navbar__toggle {
@@ -39,7 +45,7 @@
   height: 40px;
   margin-left: auto;
   padding: 0;
-  border: 1px solid var(--border-strong);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
@@ -50,7 +56,7 @@
   width: 18px;
   height: 2px;
   border-radius: 2px;
-  background: var(--text);
+  background: #fff;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
@@ -77,6 +83,7 @@
 .navbar__links {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
   flex: 1;
   min-width: 0;
@@ -90,8 +97,9 @@
 
 .navbar__link {
   text-decoration: none;
-  color: var(--text-dim);
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 14px;
   padding: 9px 14px;
   border-radius: var(--radius-pill);
@@ -101,13 +109,13 @@
 }
 
 .navbar__link:hover {
-  color: var(--text);
-  background: rgba(74, 25, 66, 0.05);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .navbar__link.is-active {
-  color: var(--pink-dim);
-  background: rgba(255, 79, 216, 0.14);
+  color: var(--purple);
+  background: var(--yellow);
 }
 
 .navbar__admin {
@@ -128,9 +136,9 @@
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
-    padding: 14px 24px 20px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    padding: 18px 24px 20px;
+    background: var(--magenta);
+    box-shadow: 0 4px 0 var(--yellow);
   }
 
   .navbar__menu.is-open {
@@ -152,5 +160,11 @@
   .navbar__admin {
     justify-content: center;
     margin-top: 6px;
+  }
+}
+
+@media (max-width: 400px) {
+  .navbar__tag {
+    display: none;
   }
 }

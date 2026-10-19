@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { BrandMark } from './BrandMark'
 import './Navbar.css'
 
 const links = [
@@ -18,10 +19,9 @@ export function Navbar() {
   return (
     <header className="navbar">
       <div className="container navbar__inner">
-        <NavLink to="/" className="navbar__brand">
-          <span>
-            GameJam <strong>Delas</strong>
-          </span>
+        <NavLink to="/" className="navbar__brand" aria-label="Ciência Delas · início">
+          <BrandMark />
+          <span className="navbar__tag">Game Jam 2026</span>
         </NavLink>
 
         <button
@@ -51,7 +51,7 @@ export function Navbar() {
             ))}
           </nav>
 
-          <NavLink to="/admin" className="btn btn-ghost btn-sm navbar__admin" onClick={closeMenu}>
+          <NavLink to="/admin" className="btn btn-accent btn-sm navbar__admin" onClick={closeMenu}>
             Painel admin
           </NavLink>
         </div>

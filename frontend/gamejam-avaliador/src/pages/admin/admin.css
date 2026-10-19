@@ -6,7 +6,8 @@
 .admin-sidebar {
   width: 220px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
+  background: var(--surface);
+  border-right: 4px solid var(--magenta);
   padding: 28px 18px;
   display: flex;
   flex-direction: column;
@@ -42,13 +43,13 @@
 }
 
 .admin-sidebar__link:hover {
-  background: rgba(74, 25, 66, 0.05);
+  background: var(--sky);
   color: var(--text);
 }
 
 .admin-sidebar__link.is-active {
-  background: rgba(255, 79, 216, 0.14);
-  color: var(--pink-dim);
+  background: var(--yellow);
+  color: var(--purple);
 }
 
 .admin-sidebar__logout {
@@ -77,14 +78,18 @@
 }
 
 .admin-stat-card {
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border-top: 5px solid var(--cyan);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-soft);
 }
 
 .admin-stat-card__value {
   font-family: var(--font-display);
+  font-weight: 900;
   font-size: 30px;
-  color: var(--text);
+  color: var(--purple);
 }
 
 .admin-stat-card__label {
