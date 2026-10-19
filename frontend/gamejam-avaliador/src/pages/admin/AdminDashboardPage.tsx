@@ -74,7 +74,7 @@ export function AdminDashboardPage() {
               <tr key={result.teamId}>
                 <td>{result.rank}º</td>
                 <td>{result.teamName}</td>
-                <td>{result.gameTitle}</td>
+                <td>{result.gameTitle || '—'}</td>
                 <td>{result.finalScore.toFixed(1)}/100</td>
                 {result.criterionScores.map((score) => (
                   <td key={score.criterion}>

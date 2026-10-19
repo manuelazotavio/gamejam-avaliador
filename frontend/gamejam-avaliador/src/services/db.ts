@@ -46,11 +46,11 @@ export interface TeamInput {
 interface TeamRow {
   id: string
   name: string
-  game_title: string
+  game_title: string | null
 }
 
 function toTeam(row: TeamRow): Team {
-  return { id: row.id, name: row.name, gameTitle: row.game_title }
+  return { id: row.id, name: row.name, gameTitle: row.game_title ?? '' }
 }
 
 export async function listTeams(): Promise<Team[]> {
@@ -71,7 +71,7 @@ export async function createTeam(input: TeamInput): Promise<Team> {
   const row = unwrap(
     await supabase
       .from('teams')
-      .insert({ name: input.name.trim(), game_title: input.gameTitle.trim() })
+      .insert({ name: input.name.trim(), game_title: input.gameTitle.trim() || null })
       .select('id, name, game_title')
       .single(),
   )
@@ -82,7 +82,7 @@ export async function updateTeam(id: string, input: TeamInput): Promise<Team> {
   const row = unwrap(
     await supabase
       .from('teams')
-      .update({ name: input.name.trim(), game_title: input.gameTitle.trim() })
+      .update({ name: input.name.trim(), game_title: input.gameTitle.trim() || null })
       .eq('id', id)
       .select('id, name, game_title')
       .single(),
@@ -102,7 +102,7 @@ type TeamResultRow = {
   rank: number
   team_id: string
   team_name: string
-  game_title: string
+  game_title: string | null
   final_score: number
   evaluation_count: number
 } & Record<string, number | string>
@@ -113,7 +113,7 @@ export async function getResults(): Promise<TeamResult[]> {
     rank: row.rank,
     teamId: row.team_id,
     teamName: row.team_name,
-    gameTitle: row.game_title,
+    gameTitle: row.game_title ?? '',
     finalScore: row.final_score,
     evaluationCount: row.evaluation_count,
     criterionScores: CRITERIA.map((criterion) => ({

@@ -14,7 +14,7 @@ function voteUrl(team: Team): string {
 }
 
 function fileName(team: Team): string {
-  const slug = team.gameTitle
+  const slug = (team.gameTitle || team.name)
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, '-')
@@ -65,8 +65,8 @@ export function AdminQrCodesPage() {
       <div className="qr-grid">
         {items.map(({ team, url, image }) => (
           <div key={team.id} className="card qr-card">
-            <img src={image} alt={`QR code para avaliar ${team.gameTitle}`} />
-            <strong className="qr-card__game">{team.gameTitle}</strong>
+            <img src={image} alt={`QR code para avaliar ${team.gameTitle || team.name}`} />
+            <strong className="qr-card__game">{team.gameTitle || team.name}</strong>
             <span>{team.name}</span>
             <span className="qr-card__url">{url}</span>
             <a className="btn btn-ghost btn-sm no-print" href={image} download={fileName(team)}>

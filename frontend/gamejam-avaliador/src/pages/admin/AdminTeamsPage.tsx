@@ -39,8 +39,8 @@ export function AdminTeamsPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!form.name.trim() || !form.gameTitle.trim()) {
-      notify('Preencha ao menos o nome do time e do jogo.', 'error')
+    if (!form.name.trim()) {
+      notify('Preencha o nome do time.', 'error')
       return
     }
     setSaving(true)
@@ -88,7 +88,7 @@ export function AdminTeamsPage() {
             />
           </div>
           <div className="field">
-            <label>Nome do jogo</label>
+            <label>Nome do jogo (opcional)</label>
             <input
               className="input"
               value={form.gameTitle}
@@ -125,7 +125,7 @@ export function AdminTeamsPage() {
               {teams.map((team) => (
                 <tr key={team.id}>
                   <td>{team.name}</td>
-                  <td>{team.gameTitle}</td>
+                  <td>{team.gameTitle || '—'}</td>
                   <td style={{ display: 'flex', gap: 8 }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => startEdit(team)}>
                       Editar

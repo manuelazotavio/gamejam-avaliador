@@ -173,7 +173,7 @@ function VoteFlow({ team }: { team: Team }) {
         <div className="card vote-card">
           <h2>Confirme sua presença no evento</h2>
           <p>
-            Para avaliar <strong>{team.gameTitle}</strong>, precisamos confirmar que você está fisicamente no local da GameJam
+            Para avaliar <strong>{team.gameTitle || team.name}</strong>, precisamos confirmar que você está fisicamente no local da GameJam
             {config ? ` (raio de ${config.radiusMeters}m).` : '.'}
           </p>
           {locationError && <div className="alert alert--error">{locationError}</div>}
@@ -211,7 +211,7 @@ function VoteFlow({ team }: { team: Team }) {
 
       {step === 'vote' && (
         <div className="card vote-card vote-card--evaluation">
-          <h2>{team.gameTitle}</h2>
+          <h2>{team.gameTitle || team.name}</h2>
           <p className="vote-card__hint">{team.name}</p>
           <EvaluationForm value={evaluation} onChange={setEvaluation} />
           <div className="vote-nav">
@@ -225,7 +225,7 @@ function VoteFlow({ team }: { team: Team }) {
       {step === 'done' && (
         <div className="card vote-card vote-card--success">
           <h2>Avaliação registrada!</h2>
-          <p>Obrigada por avaliar {team.gameTitle}. Você pode avaliar os outros times escaneando o QR code de cada um.</p>
+          <p>Obrigada por avaliar {team.gameTitle || team.name}. Você pode avaliar os outros times escaneando o QR code de cada um.</p>
           <Link to="/resultados" className="btn btn-primary btn-block">
             Ver resultados
           </Link>

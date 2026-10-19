@@ -14,8 +14,8 @@ export function TeamCard({ team, rank, trailing }: TeamCardProps) {
     <article className="team-card" style={{ '--team-color': colorForTeam(team.id) } as CSSProperties}>
       {rank !== undefined && <span className="team-card__rank">#{rank}</span>}
       <div className="team-card__header">
-        <span className="team-card__badge">{team.name}</span>
-        <h3>{team.gameTitle}</h3>
+        {team.gameTitle && <span className="team-card__badge">{team.name}</span>}
+        <h3>{team.gameTitle || team.name}</h3>
       </div>
       {trailing && <div className="team-card__trailing">{trailing}</div>}
     </article>

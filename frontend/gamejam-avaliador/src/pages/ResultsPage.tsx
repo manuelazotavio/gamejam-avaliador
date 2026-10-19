@@ -31,8 +31,8 @@ export function ResultsPage() {
             <div key={result.teamId} className="results-row">
               <span className="results-row__rank">{result.rank}º</span>
               <div className="results-row__info">
-                <strong>{result.gameTitle}</strong>
-                <span>{result.teamName}</span>
+                <strong>{result.gameTitle || result.teamName}</strong>
+                {result.gameTitle && <span>{result.teamName}</span>}
               </div>
               <div className="results-row__score">
                 <span className="results-row__average">{result.finalScore.toFixed(1)}/100</span>
