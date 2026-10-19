@@ -60,3 +60,22 @@ export function markTeamEvaluated(teamId: string): void {
 export function forgetVoterCpf(): void {
   write({ ...readVoterSession(), cpf: null, evaluated: [] })
 }
+
+const DEVICE_KEY = 'cienciadelas.device'
+let memoryDeviceId: string | null = null
+
+// Identificador aleatório deste navegador, para a trava "um CPF por aparelho".
+// Não expira com a sessão: o aparelho continua ligado ao CPF que votou nele.
+export function getDeviceId(): string {
+  try {
+    const saved = localStorage.getItem(DEVICE_KEY)
+    if (saved) return saved
+    const created = crypto.randomUUID()
+    localStorage.setItem(DEVICE_KEY, created)
+    return created
+  } catch {
+    // sem armazenamento: vale só enquanto a página estiver aberta.
+    memoryDeviceId ??= crypto.randomUUID()
+    return memoryDeviceId
+  }
+}

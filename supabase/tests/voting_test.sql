@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(17);
+select plan(20);
 
 delete from public.teams;
 
@@ -103,6 +103,26 @@ select is(
   (select count(*) from public.evaluations where cpf = '00000000004'),
   0::bigint,
   'avaliação rejeitada não deixa rastro'
+);
+
+-- Trava por aparelho (ligada por padrão).
+select public.submit_evaluation('00000000001', null, '44444444-4444-4444-4444-444444444444',
+  pg_temp.scores(1, 1, 1, 1, 1, 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+select is(
+  public.check_voter('00000000002', null, '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  'Este aparelho já foi usado para votar com outro CPF.',
+  'aparelho usado por outro CPF é bloqueado'
+);
+select is(
+  public.check_voter('00000000001', null, '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  null,
+  'o mesmo CPF segue avaliando outros times pelo mesmo aparelho'
+);
+update public.event_config set one_vote_per_device = false;
+select is(
+  public.check_voter('00000000002', null, '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  null,
+  'sem one_vote_per_device, outro CPF vota pelo mesmo aparelho'
 );
 
 update public.event_config set one_vote_per_ip = true;

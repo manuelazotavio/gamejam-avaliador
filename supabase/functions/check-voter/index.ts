@@ -4,7 +4,7 @@ import { isValidCpf, stripCpf } from '../_shared/cpf.ts'
 import { adminClient, clientIp, errorResponse, isUuid, json, readPost } from '../_shared/http.ts'
 
 Deno.serve(async (req) => {
-  const body = await readPost<{ cpf?: unknown; teamId?: unknown }>(req)
+  const body = await readPost<{ cpf?: unknown; teamId?: unknown; deviceId?: unknown }>(req)
   if (body instanceof Response) return body
 
   const cpf = stripCpf(String(body.cpf ?? ''))
@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
     p_cpf: cpf,
     p_ip: clientIp(req),
     p_team_id: body.teamId,
+    p_device_id: isUuid(body.deviceId) ? body.deviceId.toLowerCase() : null,
   })
   if (error) {
     console.error('check_voter failed', error)

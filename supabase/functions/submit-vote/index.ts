@@ -8,6 +8,7 @@ interface SubmitVoteBody {
   cpf?: unknown
   teamId?: unknown
   scores?: unknown
+  deviceId?: unknown
 }
 
 Deno.serve(async (req) => {
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
     p_ip: clientIp(req),
     p_team_id: body.teamId,
     p_scores: body.scores,
+    p_device_id: isUuid(body.deviceId) ? body.deviceId.toLowerCase() : null,
   })
 
   if (error) {

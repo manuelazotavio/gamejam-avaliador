@@ -149,6 +149,12 @@ export function AdminConfigPage() {
             hint="Desligado, qualquer CPF válido pode votar, mesmo fora da lista."
           />
           <Toggle
+            checked={config.oneVotePerDevice}
+            onChange={(oneVotePerDevice) => setConfig({ ...config, oneVotePerDevice })}
+            label="Permitir só um CPF por aparelho"
+            hint="Bloqueia votar com outro CPF no mesmo celular. Uma aba anônima ainda passa."
+          />
+          <Toggle
             checked={config.oneVotePerIp}
             onChange={(oneVotePerIp) => setConfig({ ...config, oneVotePerIp })}
             label="Permitir só um voto por rede (IP)"

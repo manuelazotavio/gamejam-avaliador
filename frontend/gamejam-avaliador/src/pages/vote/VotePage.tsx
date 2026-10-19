@@ -131,6 +131,8 @@ function VoteFlow({ team }: { team: Team }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Com a trava por aparelho, depois do primeiro voto este celular fica com este CPF.
+  const canChangeCpf = !(config?.oneVotePerDevice && readVoterSession().evaluated.length > 0)
   const steps = config?.requireLocation === false ? STEPS.filter((s) => s !== 'location') : STEPS
 
   async function handleCheckLocation() {
@@ -262,10 +264,15 @@ function VoteFlow({ team }: { team: Team }) {
             </button>
           </div>
           <p className="vote-identity">
-            Avaliando com o CPF {maskCpf(stripCpf(cpfInput))} ·{' '}
-            <button type="button" className="vote-identity__change" onClick={handleChangeCpf}>
-              Trocar CPF
-            </button>
+            Avaliando com o CPF {maskCpf(stripCpf(cpfInput))}
+            {canChangeCpf && (
+              <>
+                {' · '}
+                <button type="button" className="vote-identity__change" onClick={handleChangeCpf}>
+                  Trocar CPF
+                </button>
+              </>
+            )}
           </p>
         </div>
       )}

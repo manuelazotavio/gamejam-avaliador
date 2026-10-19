@@ -77,6 +77,7 @@ export interface EventConfig {
   oneVotePerIp: boolean
   requireLocation: boolean
   votersOnly: boolean
+  oneVotePerDevice: boolean
 }
 
 export interface GeoCheckResult {

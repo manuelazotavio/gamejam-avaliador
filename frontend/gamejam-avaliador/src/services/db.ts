@@ -1,6 +1,7 @@
 import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
 import { isValidCpf, stripCpf } from '../lib/cpf'
 import { supabase } from '../lib/supabase'
+import { getDeviceId } from '../lib/voterSession'
 import { CRITERIA, type EventConfig, type EvaluationInput, type Team, type TeamResult, type Voter } from '../types'
 
 const GENERIC_ERROR = 'Não foi possível falar com o servidor.'
@@ -209,6 +210,7 @@ interface EventConfigRow {
   one_vote_per_ip: boolean
   require_location: boolean
   voters_only: boolean
+  one_vote_per_device: boolean
 }
 
 function toConfig(row: EventConfigRow): EventConfig {
@@ -221,10 +223,11 @@ function toConfig(row: EventConfigRow): EventConfig {
     oneVotePerIp: row.one_vote_per_ip,
     requireLocation: row.require_location,
     votersOnly: row.voters_only,
+    oneVotePerDevice: row.one_vote_per_device,
   }
 }
 
-const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only'
+const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device'
 
 export async function getConfig(): Promise<EventConfig> {
   return toConfig(unwrap(await supabase.from('event_config').select(CONFIG_COLUMNS).eq('id', 1).single()))
@@ -243,6 +246,7 @@ export async function updateConfig(config: EventConfig): Promise<EventConfig> {
         one_vote_per_ip: config.oneVotePerIp,
         require_location: config.requireLocation,
         voters_only: config.votersOnly,
+        one_vote_per_device: config.oneVotePerDevice,
       })
       .eq('id', 1)
       .select(CONFIG_COLUMNS)
@@ -261,11 +265,11 @@ export interface EligibilityResult {
 }
 
 export function checkVoterEligibility(cpf: string, teamId: string): Promise<EligibilityResult> {
-  return invokeFunction<EligibilityResult>('check-voter', { cpf: stripCpf(cpf), teamId })
+  return invokeFunction<EligibilityResult>('check-voter', { cpf: stripCpf(cpf), teamId, deviceId: getDeviceId() })
 }
 
 export async function submitEvaluation(cpf: string, teamId: string, scores: EvaluationInput): Promise<void> {
-  await invokeFunction('submit-vote', { cpf: stripCpf(cpf), teamId, scores })
+  await invokeFunction('submit-vote', { cpf: stripCpf(cpf), teamId, scores, deviceId: getDeviceId() })
 }
 
 // ---------------------------------------------------------------------------
