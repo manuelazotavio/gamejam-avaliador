@@ -106,8 +106,6 @@ type TeamResultRow = {
   game_title: string | null
   final_score: number
   evaluation_count: number
-  jury_score: number
-  popular_score: number
   jury_count: number
   popular_count: number
 } & Record<string, number | string>
@@ -121,8 +119,6 @@ export async function getResults(): Promise<TeamResult[]> {
     gameTitle: row.game_title ?? '',
     finalScore: row.final_score,
     evaluationCount: row.evaluation_count,
-    juryScore: row.jury_score,
-    popularScore: row.popular_score,
     juryCount: row.jury_count,
     popularCount: row.popular_count,
     criterionScores: CRITERIA.map((criterion) => ({

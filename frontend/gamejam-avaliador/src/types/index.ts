@@ -70,9 +70,6 @@ export interface TeamResult {
   finalScore: number
   evaluationCount: number
   // Nota final: o público entra como mais um jurado em cada critério (regra de 2025).
-  // Júri e popular: as mesmas contas só com cada grupo (0 a 100), para conferência.
-  juryScore: number
-  popularScore: number
   juryCount: number
   popularCount: number
   // Pontos por critério, com o público como mais um jurado.

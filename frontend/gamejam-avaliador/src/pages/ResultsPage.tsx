@@ -37,7 +37,7 @@ export function ResultsPage() {
               <div className="results-row__score">
                 <span className="results-row__average">{result.finalScore.toFixed(1)}/100</span>
                 <span className="results-row__count">
-                  Júri {result.juryScore.toFixed(1)} · Popular {result.popularScore.toFixed(1)}
+                  {result.evaluationCount} {result.evaluationCount === 1 ? 'avaliação' : 'avaliações'}
                 </span>
               </div>
             </div>
