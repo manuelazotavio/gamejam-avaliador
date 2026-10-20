@@ -69,12 +69,13 @@ export interface TeamResult {
   gameTitle: string
   finalScore: number
   evaluationCount: number
-  // Júri: 0 a 100 com pesos. Popular: média das estrelas levada para 0 a 100.
+  // Nota final: o público entra como mais um jurado em cada critério (regra de 2025).
+  // Júri e popular: as mesmas contas só com cada grupo (0 a 100), para conferência.
   juryScore: number
   popularScore: number
   juryCount: number
   popularCount: number
-  // Pontos do júri por critério.
+  // Pontos por critério, com o público como mais um jurado.
   criterionScores: CriterionScore[]
 }
 
@@ -88,8 +89,6 @@ export interface EventConfig {
   requireLocation: boolean
   votersOnly: boolean
   oneVotePerDevice: boolean
-  // Peso do júri na nota final, em % (o resto é do voto popular).
-  juryWeight: number
 }
 
 export interface GeoCheckResult {

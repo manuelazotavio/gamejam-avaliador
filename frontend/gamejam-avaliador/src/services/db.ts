@@ -224,7 +224,6 @@ interface EventConfigRow {
   require_location: boolean
   voters_only: boolean
   one_vote_per_device: boolean
-  jury_weight: number
 }
 
 function toConfig(row: EventConfigRow): EventConfig {
@@ -238,11 +237,10 @@ function toConfig(row: EventConfigRow): EventConfig {
     requireLocation: row.require_location,
     votersOnly: row.voters_only,
     oneVotePerDevice: row.one_vote_per_device,
-    juryWeight: row.jury_weight,
   }
 }
 
-const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device, jury_weight'
+const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device'
 
 export async function getConfig(): Promise<EventConfig> {
   return toConfig(unwrap(await supabase.from('event_config').select(CONFIG_COLUMNS).eq('id', 1).single()))
@@ -262,7 +260,6 @@ export async function updateConfig(config: EventConfig): Promise<EventConfig> {
         require_location: config.requireLocation,
         voters_only: config.votersOnly,
         one_vote_per_device: config.oneVotePerDevice,
-        jury_weight: config.juryWeight,
       })
       .eq('id', 1)
       .select(CONFIG_COLUMNS)

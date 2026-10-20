@@ -15,7 +15,7 @@ export function ResultsPage() {
     <div className="page container container--narrow">
       <span className="eyebrow">placar ao vivo</span>
       <h1 style={{ fontSize: 36, marginTop: 10, marginBottom: 10 }}>Resultados</h1>
-      <p style={{ marginBottom: 32 }}>Nota final de 0 a 100, combinando a nota do júri e a média do voto popular.</p>
+      <p style={{ marginBottom: 32 }}>Nota final de 0 a 100: em cada critério, a média do voto popular conta como mais um jurado.</p>
 
       {results === null && <Loader label="Calculando resultados..." />}
 

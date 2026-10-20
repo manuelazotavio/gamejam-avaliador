@@ -66,7 +66,7 @@ export function AdminDashboardPage() {
               <th>Júri</th>
               <th>Popular</th>
               {criteriaLabels.map((label) => (
-                <th key={label}>{label} (júri)</th>
+                <th key={label}>{label}</th>
               ))}
               <th>Avaliações</th>
             </tr>
