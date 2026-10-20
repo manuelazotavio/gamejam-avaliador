@@ -46,7 +46,8 @@ function App() {
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="times" element={<AdminTeamsPage />} />
         <Route path="qrcodes" element={<AdminQrCodesPage />} />
-        <Route path="eleitoras" element={<AdminVotersPage />} />
+        <Route path="eleitoras" element={<AdminVotersPage key="popular" />} />
+        <Route path="juri" element={<AdminVotersPage key="jury" role="jury" />} />
         <Route path="configuracoes" element={<AdminConfigPage />} />
       </Route>
 

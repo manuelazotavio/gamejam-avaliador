@@ -130,6 +130,21 @@ export function AdminConfigPage() {
           />
         </div>
 
+        <div className="field" style={{ marginBottom: 20 }}>
+          <label>Peso do júri na nota final (%)</label>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            max={100}
+            value={config.juryWeight}
+            onChange={(e) => setConfig({ ...config, juryWeight: Math.min(100, Math.max(0, Math.round(Number(e.target.value)))) })}
+          />
+          <small style={{ color: 'var(--text-faint)' }}>
+            Júri {config.juryWeight}% · Voto popular {100 - config.juryWeight}%
+          </small>
+        </div>
+
         <div className="toggle-list">
           <Toggle
             checked={config.votingOpen}

@@ -2,7 +2,7 @@ import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
 import { isValidCpf, stripCpf } from '../lib/cpf'
 import { supabase } from '../lib/supabase'
 import { getDeviceId } from '../lib/voterSession'
-import { CRITERIA, type EventConfig, type EvaluationInput, type Team, type TeamResult, type Voter } from '../types'
+import { CRITERIA, type EventConfig, type EvaluationInput, type Team, type TeamResult, type Voter, type VoterRole } from '../types'
 
 const GENERIC_ERROR = 'Não foi possível falar com o servidor.'
 
@@ -106,6 +106,10 @@ type TeamResultRow = {
   game_title: string | null
   final_score: number
   evaluation_count: number
+  jury_score: number
+  popular_score: number
+  jury_count: number
+  popular_count: number
 } & Record<string, number | string>
 
 export async function getResults(): Promise<TeamResult[]> {
@@ -117,6 +121,10 @@ export async function getResults(): Promise<TeamResult[]> {
     gameTitle: row.game_title ?? '',
     finalScore: row.final_score,
     evaluationCount: row.evaluation_count,
+    juryScore: row.jury_score,
+    popularScore: row.popular_score,
+    juryCount: row.jury_count,
+    popularCount: row.popular_count,
     criterionScores: CRITERIA.map((criterion) => ({
       criterion: criterion.key,
       label: criterion.label,
@@ -134,17 +142,21 @@ interface VoterStatusRow {
   cpf: string
   name: string
   imported: boolean
+  role: VoterRole
   evaluation_count: number
   first_voted_at: string | null
   ip: string | null
 }
 
-export async function listVoters(): Promise<Voter[]> {
-  const rows = unwrap(await supabase.from('voter_status').select('*').order('name')) as VoterStatusRow[]
+export async function listVoters(role?: VoterRole): Promise<Voter[]> {
+  let query = supabase.from('voter_status').select('*').order('name')
+  if (role) query = query.eq('role', role)
+  const rows = unwrap(await query) as VoterStatusRow[]
   return rows.map((row) => ({
     cpf: row.cpf,
     name: row.name,
     imported: row.imported,
+    role: row.role,
     hasVoted: row.evaluation_count > 0,
     evaluationCount: row.evaluation_count,
     votedAt: toTimestamp(row.first_voted_at),
@@ -163,9 +175,9 @@ export interface ImportSummary {
   invalid: number
 }
 
-export async function importVoters(rows: VoterImportRow[]): Promise<ImportSummary> {
+export async function importVoters(rows: VoterImportRow[], role: VoterRole = 'popular'): Promise<ImportSummary> {
   const summary: ImportSummary = { added: 0, duplicated: 0, invalid: 0 }
-  const unique = new Map<string, { cpf: string; name: string }>()
+  const unique = new Map<string, { cpf: string; name: string; role: VoterRole }>()
 
   for (const row of rows) {
     const cpf = stripCpf(row.cpf)
@@ -174,16 +186,17 @@ export async function importVoters(rows: VoterImportRow[]): Promise<ImportSummar
     } else if (unique.has(cpf)) {
       summary.duplicated += 1
     } else {
-      unique.set(cpf, { cpf, name: row.name.trim() || 'Sem nome informado' })
+      unique.set(cpf, { cpf, name: row.name.trim() || 'Sem nome informado', role })
     }
   }
 
   if (unique.size > 0) {
-    // ignoreDuplicates: CPFs já cadastrados não voltam no select.
+    // Júri: um CPF que já estava na lista do público passa para o júri (atualiza nome e papel).
+    // Público: ignoreDuplicates não rebaixa ninguém do júri; CPFs já cadastrados não voltam no select.
     const inserted = unwrap(
       await supabase
         .from('voters')
-        .upsert([...unique.values()], { onConflict: 'cpf', ignoreDuplicates: true })
+        .upsert([...unique.values()], { onConflict: 'cpf', ignoreDuplicates: role === 'popular' })
         .select('cpf'),
     )
     summary.added = inserted.length
@@ -211,6 +224,7 @@ interface EventConfigRow {
   require_location: boolean
   voters_only: boolean
   one_vote_per_device: boolean
+  jury_weight: number
 }
 
 function toConfig(row: EventConfigRow): EventConfig {
@@ -224,10 +238,11 @@ function toConfig(row: EventConfigRow): EventConfig {
     requireLocation: row.require_location,
     votersOnly: row.voters_only,
     oneVotePerDevice: row.one_vote_per_device,
+    juryWeight: row.jury_weight,
   }
 }
 
-const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device'
+const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device, jury_weight'
 
 export async function getConfig(): Promise<EventConfig> {
   return toConfig(unwrap(await supabase.from('event_config').select(CONFIG_COLUMNS).eq('id', 1).single()))
@@ -247,6 +262,7 @@ export async function updateConfig(config: EventConfig): Promise<EventConfig> {
         require_location: config.requireLocation,
         voters_only: config.votersOnly,
         one_vote_per_device: config.oneVotePerDevice,
+        jury_weight: config.juryWeight,
       })
       .eq('id', 1)
       .select(CONFIG_COLUMNS)
@@ -262,6 +278,7 @@ export async function updateConfig(config: EventConfig): Promise<EventConfig> {
 export interface EligibilityResult {
   ok: boolean
   reason: string | null
+  role: VoterRole
 }
 
 export function checkVoterEligibility(cpf: string, teamId: string): Promise<EligibilityResult> {

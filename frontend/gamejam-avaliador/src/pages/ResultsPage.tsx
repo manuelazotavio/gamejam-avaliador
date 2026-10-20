@@ -15,7 +15,7 @@ export function ResultsPage() {
     <div className="page container container--narrow">
       <span className="eyebrow">placar ao vivo</span>
       <h1 style={{ fontSize: 36, marginTop: 10, marginBottom: 10 }}>Resultados</h1>
-      <p style={{ marginBottom: 32 }}>Pontuação final de cada time, de 0 a 100, atualizada em tempo real.</p>
+      <p style={{ marginBottom: 32 }}>Nota final de 0 a 100, combinando a nota do júri e a média do voto popular.</p>
 
       {results === null && <Loader label="Calculando resultados..." />}
 
@@ -37,7 +37,7 @@ export function ResultsPage() {
               <div className="results-row__score">
                 <span className="results-row__average">{result.finalScore.toFixed(1)}/100</span>
                 <span className="results-row__count">
-                  {result.evaluationCount} {result.evaluationCount === 1 ? 'avaliação' : 'avaliações'}
+                  Júri {result.juryScore.toFixed(1)} · Popular {result.popularScore.toFixed(1)}
                 </span>
               </div>
             </div>

@@ -3,7 +3,26 @@ import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { formatCpf } from '../../lib/cpf'
 import { importVoters, listVoters, removeVoter, type VoterImportRow } from '../../services/db'
-import type { Voter } from '../../types'
+import type { Voter, VoterRole } from '../../types'
+
+const COPY: Record<VoterRole, { eyebrow: string; title: string; help: string; removed: string; empty: string; one: string }> = {
+  popular: {
+    eyebrow: 'eleitoras',
+    title: 'Importar eleitoras',
+    help: 'Só CPFs desta lista votam no voto popular (com a opção "Aceitar só eleitoras cadastradas" ligada).',
+    removed: 'Eleitora removida.',
+    empty: 'Nenhuma eleitora importada ainda.',
+    one: 'da lista de eleitoras',
+  },
+  jury: {
+    eyebrow: 'júri',
+    title: 'Avaliadoras do júri',
+    help: 'Quem está nesta lista avalia com os pesos dos critérios. Um CPF que já estava na lista do público passa para o júri.',
+    removed: 'Avaliadora removida do júri.',
+    empty: 'Nenhuma avaliadora do júri cadastrada ainda.',
+    one: 'do júri',
+  },
+}
 
 function parseVoterRows(text: string): VoterImportRow[] {
   return text
@@ -16,7 +35,8 @@ function parseVoterRows(text: string): VoterImportRow[] {
     })
 }
 
-export function AdminVotersPage() {
+export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
+  const copy = COPY[role]
   const { notify } = useToast()
   const [voters, setVoters] = useState<Voter[] | null>(null)
   const [text, setText] = useState('')
@@ -24,12 +44,12 @@ export function AdminVotersPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function refresh() {
-    setVoters(await listVoters())
+    setVoters(await listVoters(role))
   }
 
   useEffect(() => {
-    listVoters().then(setVoters)
-  }, [])
+    listVoters(role).then(setVoters)
+  }, [role])
 
   async function handleImport() {
     const rows = parseVoterRows(text)
@@ -39,9 +59,9 @@ export function AdminVotersPage() {
     }
     setImporting(true)
     try {
-      const summary = await importVoters(rows)
+      const summary = await importVoters(rows, role)
       notify(
-        `${summary.added} adicionadas, ${summary.duplicated} duplicadas, ${summary.invalid} inválidas.`,
+        `${summary.added} salvas, ${summary.duplicated} já cadastradas, ${summary.invalid} inválidas.`,
         summary.added > 0 ? 'success' : 'info',
       )
       setText('')
@@ -58,9 +78,9 @@ export function AdminVotersPage() {
   }
 
   async function handleRemove(voter: Voter) {
-    if (!confirm(`Remover ${voter.name} da lista de eleitoras?`)) return
+    if (!confirm(`Remover ${voter.name} ${copy.one}?`)) return
     await removeVoter(voter.cpf)
-    notify('Eleitora removida.', 'info')
+    notify(copy.removed, 'info')
     await refresh()
   }
 
@@ -68,15 +88,15 @@ export function AdminVotersPage() {
     <div>
       <div className="admin-header">
         <div>
-          <span className="eyebrow">eleitoras</span>
-          <h1 style={{ fontSize: 28, marginTop: 8 }}>Importar eleitoras</h1>
+          <span className="eyebrow">{copy.eyebrow}</span>
+          <h1 style={{ fontSize: 28, marginTop: 8 }}>{copy.title}</h1>
         </div>
       </div>
 
       <div className="card" style={{ marginBottom: 28 }}>
         <h3 style={{ marginBottom: 6 }}>Colar lista ou importar CSV</h3>
         <p style={{ marginBottom: 16 }}>
-          Um registro por linha, no formato <code>cpf, nome</code>. Só CPFs desta lista poderão votar.
+          Um registro por linha, no formato <code>cpf, nome</code>. {copy.help}
         </p>
         <textarea
           className="input"
@@ -137,7 +157,7 @@ export function AdminVotersPage() {
               {voters.length === 0 && (
                 <tr>
                   <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
-                    Nenhuma eleitora importada ainda.
+                    {copy.empty}
                   </td>
                 </tr>
               )}

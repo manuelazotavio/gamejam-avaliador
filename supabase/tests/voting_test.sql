@@ -2,15 +2,18 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(20);
+select plan(23);
 
 delete from public.teams;
 
-insert into public.voters (cpf, name) values
-  ('00000000001', 'Ana'),
-  ('00000000002', 'Bia'),
-  ('00000000003', 'Carla'),
-  ('00000000004', 'Duda');
+-- As primeiras eleitoras são do júri e o peso começa em 100%: a nota final é a do júri.
+insert into public.voters (cpf, name, role) values
+  ('00000000001', 'Ana', 'jury'),
+  ('00000000002', 'Bia', 'jury'),
+  ('00000000003', 'Carla', 'jury'),
+  ('00000000004', 'Duda', 'jury'),
+  ('00000000005', 'Eva', 'popular');
+update public.event_config set jury_weight = 100;
 
 insert into public.teams (id, name, game_title) values
   ('11111111-1111-1111-1111-111111111111', 'Pixel Bruxas', 'Encanto de Bytes'),
@@ -148,6 +151,26 @@ select is(
   public.check_voter('00000000099', null, '11111111-1111-1111-1111-111111111111'),
   null,
   'sem voters_only, CPF fora da lista pode avaliar'
+);
+
+-- Voto popular: média simples das estrelas, combinada pelo peso do júri.
+select public.submit_evaluation('00000000005', null, '11111111-1111-1111-1111-111111111111',
+  pg_temp.scores(4, 4, 4, 4, 4, 4));
+select is(
+  (select kind from public.evaluations where cpf = '00000000005'),
+  'popular',
+  'CPF fora do júri gera avaliação popular'
+);
+select is(
+  (select popular_score from public.team_results where team_name = 'Pixel Bruxas'),
+  80::double precision,
+  'nota popular é a média das estrelas sem peso (4 de 5 -> 80)'
+);
+update public.event_config set jury_weight = 70;
+select is(
+  (select final_score from public.team_results where team_name = 'Pixel Bruxas'),
+  83.5::double precision,
+  'nota final combina júri e popular pelo peso (85 * 0,7 + 80 * 0,3)'
 );
 
 update public.event_config set voting_open = false;

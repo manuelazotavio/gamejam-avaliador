@@ -113,3 +113,10 @@
   text-align: center;
   font-weight: 600;
 }
+
+.vote-role-badge {
+  align-self: center;
+  color: #fff;
+  background: var(--purple);
+  border-color: transparent;
+}

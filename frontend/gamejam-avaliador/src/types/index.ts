@@ -4,10 +4,14 @@ export interface Team {
   gameTitle: string
 }
 
+// jury: avalia com os pesos dos critérios; popular: entra na média do público.
+export type VoterRole = 'popular' | 'jury'
+
 export interface Voter {
   cpf: string
   name: string
   imported: boolean
+  role: VoterRole
   hasVoted: boolean
   evaluationCount: number
   votedAt: number | null
@@ -65,6 +69,12 @@ export interface TeamResult {
   gameTitle: string
   finalScore: number
   evaluationCount: number
+  // Júri: 0 a 100 com pesos. Popular: média das estrelas levada para 0 a 100.
+  juryScore: number
+  popularScore: number
+  juryCount: number
+  popularCount: number
+  // Pontos do júri por critério.
   criterionScores: CriterionScore[]
 }
 
@@ -78,6 +88,8 @@ export interface EventConfig {
   requireLocation: boolean
   votersOnly: boolean
   oneVotePerDevice: boolean
+  // Peso do júri na nota final, em % (o resto é do voto popular).
+  juryWeight: number
 }
 
 export interface GeoCheckResult {

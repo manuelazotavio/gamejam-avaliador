@@ -63,8 +63,10 @@ export function AdminDashboardPage() {
               <th>Time</th>
               <th>Jogo</th>
               <th>Nota final</th>
+              <th>Júri</th>
+              <th>Popular</th>
               {criteriaLabels.map((label) => (
-                <th key={label}>{label}</th>
+                <th key={label}>{label} (júri)</th>
               ))}
               <th>Avaliações</th>
             </tr>
@@ -76,12 +78,16 @@ export function AdminDashboardPage() {
                 <td>{result.teamName}</td>
                 <td>{result.gameTitle || '—'}</td>
                 <td>{result.finalScore.toFixed(1)}/100</td>
+                <td>{result.juryScore.toFixed(1)}</td>
+                <td>{result.popularScore.toFixed(1)}</td>
                 {result.criterionScores.map((score) => (
                   <td key={score.criterion}>
                     {score.average.toFixed(1)}/{score.maxScore}
                   </td>
                 ))}
-                <td>{result.evaluationCount}</td>
+                <td>
+                  {result.juryCount} júri · {result.popularCount} popular
+                </td>
               </tr>
             ))}
           </tbody>

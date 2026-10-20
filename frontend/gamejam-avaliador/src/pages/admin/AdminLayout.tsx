@@ -6,6 +6,7 @@ const links = [
   { to: '/admin/dashboard', label: 'Visão geral' },
   { to: '/admin/times', label: 'Times' },
   { to: '/admin/qrcodes', label: 'QR codes' },
+  { to: '/admin/juri', label: 'Júri' },
   { to: '/admin/eleitoras', label: 'Eleitoras' },
   { to: '/admin/configuracoes', label: 'Configurações' },
 ]

@@ -14,7 +14,7 @@ import {
   saveVoterCpf,
 } from '../../lib/voterSession'
 import { checkVoterEligibility, getConfig, getTeam, submitEvaluation } from '../../services/db'
-import { EMPTY_EVALUATION, type EventConfig, type EvaluationInput, type Team } from '../../types'
+import { EMPTY_EVALUATION, type EventConfig, type EvaluationInput, type Team, type VoterRole } from '../../types'
 import './vote.css'
 
 type Step = 'loading' | 'location' | 'cpf' | 'vote' | 'done'
@@ -86,6 +86,7 @@ function VoteFlow({ team }: { team: Team }) {
 
   const [evaluation, setEvaluation] = useState<EvaluationInput>(EMPTY_EVALUATION)
   const [submitting, setSubmitting] = useState(false)
+  const [role, setRole] = useState<VoterRole>('popular')
 
   // Confere o CPF neste time e segue para as notas, ou volta para a etapa do CPF com o motivo.
   async function verifyCpf(cpf: string): Promise<void> {
@@ -98,6 +99,7 @@ function VoteFlow({ team }: { team: Team }) {
         setStep('cpf')
         return
       }
+      setRole(eligibility.role)
       saveVoterCpf(stripCpf(cpf))
       setStep('vote')
     } catch (error) {
@@ -258,7 +260,8 @@ function VoteFlow({ team }: { team: Team }) {
           <div className="alert alert--info vote-star-tip">⭐ Clique duas vezes na estrela para dar meia estrela.</div>
           <h2>{team.gameTitle || team.name}</h2>
           {team.gameTitle && <p className="vote-card__hint">{team.name}</p>}
-          <EvaluationForm value={evaluation} onChange={setEvaluation} />
+          {role === 'jury' && <span className="badge vote-role-badge">Avaliação do júri</span>}
+          <EvaluationForm value={evaluation} onChange={setEvaluation} role={role} />
           <div className="vote-nav">
             <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={submitting}>
               {submitting ? 'Enviando...' : 'Enviar avaliação'}
