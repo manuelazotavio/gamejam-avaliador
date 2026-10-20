@@ -19,7 +19,8 @@ import './vote.css'
 
 type Step = 'loading' | 'location' | 'cpf' | 'vote' | 'done'
 
-const STEPS: Step[] = ['location', 'cpf', 'vote', 'done']
+// O CPF vem antes da localização: o júri não passa pela checagem de localização.
+const STEPS: Step[] = ['cpf', 'location', 'vote', 'done']
 
 function maskCpf(cpf: string): string {
   return `***.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-**`
@@ -88,8 +89,14 @@ function VoteFlow({ team }: { team: Team }) {
   const [submitting, setSubmitting] = useState(false)
   const [role, setRole] = useState<VoterRole>('popular')
 
-  // Confere o CPF neste time e segue para as notas, ou volta para a etapa do CPF com o motivo.
-  async function verifyCpf(cpf: string): Promise<void> {
+  // O júri nunca passa pela localização; o público só quando ela está ligada e vencida.
+  function needsLocation(cfg: EventConfig, voterRole: VoterRole): boolean {
+    return voterRole !== 'jury' && cfg.requireLocation && !isLocationFresh(readVoterSession())
+  }
+
+  // Confere o CPF neste time e segue para a localização ou as notas,
+  // ou volta para a etapa do CPF com o motivo.
+  async function verifyCpf(cpf: string, cfg: EventConfig): Promise<void> {
     setCpfLoading(true)
     setCpfError(null)
     try {
@@ -101,7 +108,7 @@ function VoteFlow({ team }: { team: Team }) {
       }
       setRole(eligibility.role)
       saveVoterCpf(stripCpf(cpf))
-      setStep('vote')
+      setStep(needsLocation(cfg, eligibility.role) ? 'location' : 'vote')
     } catch (error) {
       setCpfError((error as Error).message)
       setStep('cpf')
@@ -110,23 +117,14 @@ function VoteFlow({ team }: { team: Team }) {
     }
   }
 
-  function continueAfterLocation() {
-    const savedCpf = readVoterSession().cpf
-    if (savedCpf) {
-      setStep('loading')
-      void verifyCpf(savedCpf)
-    } else {
-      setStep('cpf')
-    }
-  }
-
   useEffect(() => {
     getConfig().then((loaded) => {
       setConfig(loaded)
-      if (loaded.requireLocation && !isLocationFresh(readVoterSession())) {
-        setStep('location')
+      const savedCpf = readVoterSession().cpf
+      if (savedCpf) {
+        void verifyCpf(savedCpf, loaded)
       } else {
-        continueAfterLocation()
+        setStep('cpf')
       }
     })
     // Só na montagem: cada time tem seu próprio VoteFlow (key).
@@ -135,7 +133,7 @@ function VoteFlow({ team }: { team: Team }) {
 
   // Com a trava por aparelho, depois do primeiro voto este celular fica com este CPF.
   const canChangeCpf = !(config?.oneVotePerDevice && readVoterSession().evaluated.length > 0)
-  const steps = config?.requireLocation === false ? STEPS.filter((s) => s !== 'location') : STEPS
+  const steps = config?.requireLocation === false || role === 'jury' ? STEPS.filter((s) => s !== 'location') : STEPS
 
   async function handleCheckLocation() {
     if (!config) return
@@ -150,7 +148,7 @@ function VoteFlow({ team }: { team: Team }) {
       setDistanceMeters(distance)
       if (distance <= config.radiusMeters) {
         markLocationVerified()
-        continueAfterLocation()
+        setStep('vote')
       } else {
         setLocationError(
           `Você está a ${Math.round(distance)}m do local do evento. É preciso estar a até ${config.radiusMeters}m para votar.`,
@@ -168,17 +166,19 @@ function VoteFlow({ team }: { team: Team }) {
   }
 
   function handleCheckCpf() {
+    if (!config) return
     if (!isValidCpf(cpfInput)) {
       setCpfError('Digite um CPF válido.')
       return
     }
-    void verifyCpf(cpfInput)
+    void verifyCpf(cpfInput, config)
   }
 
   function handleChangeCpf() {
     forgetVoterCpf()
     setCpfInput('')
     setCpfError(null)
+    setRole('popular')
     setStep('cpf')
   }
 
