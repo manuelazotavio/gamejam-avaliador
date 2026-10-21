@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { BrandMark } from '../../components/BrandMark'
 import { Loader } from '../../components/Loader'
+import { useToast } from '../../context/useToast'
+import { downloadReportPdf } from '../../lib/reportPdf'
 import { getResults } from '../../services/db'
 import type { TeamResult } from '../../types'
 
@@ -49,21 +51,27 @@ function downloadCsv(report: Report) {
 }
 
 export function AdminReportPage() {
+  const { notify } = useToast()
   const [report, setReport] = useState<Report | null>(null)
+  const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     getResults().then((results) => setReport({ results, generatedAt: new Date() }))
   }, [])
 
-  // PDF em retrato com margem curta, para caber numa folha (só a partir desta página).
-  useEffect(() => {
-    const style = document.createElement('style')
-    style.textContent = '@page { size: A4 portrait; margin: 10mm; }'
-    document.head.appendChild(style)
-    return () => style.remove()
-  }, [])
-
   if (!report) return <Loader label="Montando relatório..." />
+
+  async function handleDownloadPdf(current: Report) {
+    setGenerating(true)
+    try {
+      await downloadReportPdf(current.results, new Date())
+    } catch (error) {
+      console.error(error)
+      notify('Não foi possível gerar o PDF. Confira a conexão e tente de novo.', 'error')
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   const criteria = report.results[0]?.criterionScores ?? []
 
@@ -76,8 +84,8 @@ export function AdminReportPage() {
           <p style={{ marginTop: 6 }}>Classificação final com a pontuação de cada critério.</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => window.print()}>
-            Baixar PDF
+          <button className="btn btn-primary" onClick={() => handleDownloadPdf(report)} disabled={generating}>
+            {generating ? 'Gerando PDF...' : 'Baixar PDF'}
           </button>
           <button className="btn btn-ghost" onClick={() => downloadCsv(report)}>
             Baixar planilha
