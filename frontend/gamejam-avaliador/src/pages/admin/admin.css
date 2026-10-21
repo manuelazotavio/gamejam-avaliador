@@ -299,32 +299,80 @@
   color: var(--text-faint);
 }
 
-.report__voters {
-  font-size: 12px;
-}
-
 @media print {
   body {
     background: #fff;
   }
 
+  /* Folha A4 em retrato: tudo compacto para caber numa página. */
   .report__sheet {
     box-shadow: none;
     padding: 0;
+    border-radius: 0;
+  }
+
+  .report__head {
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .report__head h2 {
+    font-size: 15px;
+  }
+
+  .report__head p {
+    font-size: 10px;
   }
 
   .report .scroll-table {
     overflow: visible;
     border: none;
+    border-radius: 0;
   }
 
-  .report__table {
-    font-size: 10px;
+  .report table.data-table {
+    table-layout: fixed;
+    font-size: 9px;
   }
 
-  .report__table th,
-  .report__table td {
-    padding: 6px 8px;
+  .report__col-pos {
+    width: 7%;
+  }
+
+  .report__col-game {
+    width: 25%;
+  }
+
+  .report__col-score {
+    width: 11%;
+  }
+
+  /* Seletores com table.data-table para vencer o estilo global da tabela. */
+  .report table.data-table th {
+    font-size: 7.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.25;
+    padding: 5px 4px;
+  }
+
+  .report table.data-table td {
+    padding: 4px;
+    line-height: 1.25;
+    overflow-wrap: break-word;
+  }
+
+  .report table.data-table td:not(:nth-child(2)) {
+    white-space: nowrap;
+  }
+
+  .report__table tr {
+    break-inside: avoid;
+  }
+
+  .report__max,
+  .report__team {
+    font-size: 7.5px;
   }
 
   /* Mantém as cores do logo e do cabeçalho da tabela no PDF. */

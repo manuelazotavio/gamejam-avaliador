@@ -25,8 +25,6 @@ function toCsv(results: TeamResult[]): string {
     'Jogo',
     'Time',
     'Pontos (0-100)',
-    'Jurados',
-    'Visitantes',
     ...criteria.map((c) => `${c.label} (máx. ${c.maxScore})`),
   ]
   const rows = results.map((r) => [
@@ -34,8 +32,6 @@ function toCsv(results: TeamResult[]): string {
     gameName(r),
     r.teamName,
     formatScore(r.finalScore),
-    String(r.juryCount),
-    String(r.popularCount),
     ...r.criterionScores.map((c) => formatScore(c.average)),
   ])
   const escape = (value: string) => (/[";\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value)
@@ -59,10 +55,10 @@ export function AdminReportPage() {
     getResults().then((results) => setReport({ results, generatedAt: new Date() }))
   }, [])
 
-  // A tabela é larga: o PDF sai em paisagem, só a partir desta página.
+  // PDF em retrato com margem curta, para caber numa folha (só a partir desta página).
   useEffect(() => {
     const style = document.createElement('style')
-    style.textContent = '@page { size: A4 landscape; margin: 12mm; }'
+    style.textContent = '@page { size: A4 portrait; margin: 10mm; }'
     document.head.appendChild(style)
     return () => style.remove()
   }, [])
@@ -103,12 +99,19 @@ export function AdminReportPage() {
 
         <div className="scroll-table">
           <table className="data-table report__table">
+            <colgroup>
+              <col className="report__col-pos" />
+              <col className="report__col-game" />
+              <col className="report__col-score" />
+              {criteria.map((c) => (
+                <col key={c.criterion} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
                 <th>Pos.</th>
                 <th>Jogo</th>
                 <th>Pontos (0-100)</th>
-                <th>Votantes</th>
                 {criteria.map((c) => (
                   <th key={c.criterion}>
                     {c.label} <span className="report__max">(máx. {c.maxScore})</span>
@@ -127,9 +130,6 @@ export function AdminReportPage() {
                   <td>
                     <strong>{formatScore(r.finalScore)}</strong>
                   </td>
-                  <td className="report__voters">
-                    {r.juryCount} avaliador(es) do júri e {r.popularCount} visitante(s)
-                  </td>
                   {r.criterionScores.map((c) => (
                     <td key={c.criterion}>{formatScore(c.average)}</td>
                   ))}
@@ -137,7 +137,7 @@ export function AdminReportPage() {
               ))}
               {report.results.length === 0 && (
                 <tr>
-                  <td colSpan={4 + criteria.length} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
+                  <td colSpan={3 + criteria.length} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
                     Nenhum time cadastrado ainda.
                   </td>
                 </tr>
