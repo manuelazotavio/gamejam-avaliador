@@ -261,3 +261,75 @@
   font-weight: 400;
   color: var(--text-faint);
 }
+
+.report__sheet {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.report__head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  color: var(--purple);
+}
+
+.report__head h2 {
+  font-size: 20px;
+}
+
+.report__head p {
+  font-size: 13px;
+}
+
+.report__table td,
+.report__table th {
+  vertical-align: top;
+}
+
+.report__max,
+.report__team {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-faint);
+}
+
+.report__voters {
+  font-size: 12px;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .report__sheet {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .report .scroll-table {
+    overflow: visible;
+    border: none;
+  }
+
+  .report__table {
+    font-size: 10px;
+  }
+
+  .report__table th,
+  .report__table td {
+    padding: 6px 8px;
+  }
+
+  /* Mantém as cores do logo e do cabeçalho da tabela no PDF. */
+  .report * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
