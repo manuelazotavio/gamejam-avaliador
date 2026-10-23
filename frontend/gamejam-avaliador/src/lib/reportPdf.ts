@@ -11,6 +11,7 @@ const PURPLE: Rgb = [75, 42, 143]
 const MAGENTA: Rgb = [229, 9, 127]
 const SKY: Rgb = [214, 239, 251]
 const TEXT_FAINT: Rgb = [138, 132, 173]
+const RED: Rgb = [209, 41, 63]
 
 // Mesmas cores dos blocos de "DELAS" no logo: [fundo, letra].
 const TILES: [Rgb, Rgb][] = [
@@ -80,11 +81,12 @@ export async function downloadReportPdf(results: TeamResult[], generatedAt: Date
   autoTable(doc, {
     startY: margin + 16,
     margin: { left: margin, right: margin, top: margin, bottom: margin },
-    head: [['Pos.', 'Jogo', 'Pontos (0-100)', ...criteria.map((c) => `${c.label} (máx. ${c.maxScore})`)]],
+    head: [['Pos.', 'Jogo', 'Pontos (0-100)', 'Penalidades', ...criteria.map((c) => `${c.label} (máx. ${c.maxScore})`)]],
     body: results.map((r) => [
       `${r.rank}º`,
       r.gameTitle ? `${r.gameTitle}\n${r.teamName}` : r.teamName,
       formatScore(r.finalScore),
+      r.penaltyPoints > 0 ? `-${r.penaltyPoints}` : '—',
       ...r.criterionScores.map((c) => formatScore(c.average)),
     ]),
     theme: 'grid',
@@ -100,9 +102,10 @@ export async function downloadReportPdf(results: TeamResult[], generatedAt: Date
     headStyles: { fillColor: SKY, textColor: PURPLE, fontStyle: 'bold', fontSize: 6.5, valign: 'bottom' },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 52 },
-      2: { cellWidth: 18, halign: 'right', fontStyle: 'bold', textColor: MAGENTA },
-      ...Object.fromEntries(criteria.map((_, i) => [i + 3, { halign: 'right' }])),
+      1: { cellWidth: 46 },
+      2: { cellWidth: 17, halign: 'right', fontStyle: 'bold', textColor: MAGENTA },
+      3: { cellWidth: 17, halign: 'right', textColor: RED },
+      ...Object.fromEntries(criteria.map((_, i) => [i + 4, { halign: 'right' }])),
     },
     alternateRowStyles: { fillColor: [248, 251, 254] },
   })

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(24);
+select plan(27);
 
 delete from public.teams;
 
@@ -174,6 +174,25 @@ select is(
   (select jury_score from public.team_results where team_name = 'Pixel Bruxas'),
   85::double precision,
   'nota só do júri continua disponível (70 e 100 -> 85)'
+);
+
+-- Penalidades saem da nota final e refazem a classificação.
+insert into public.penalties (team_id, kind, members, points) values
+  ('11111111-1111-1111-1111-111111111111', 'showcase_absence', 2, 4);
+select is(
+  (select round(final_score::numeric, 2) from public.team_results where team_name = 'Pixel Bruxas'),
+  79.33,
+  'ausência de 2 integrantes na mostra tira 4 pontos (83,33 -> 79,33)'
+);
+select is(
+  (select round(base_score::numeric, 2) from public.team_results where team_name = 'Pixel Bruxas'),
+  83.33,
+  'a nota antes das penalidades continua disponível'
+);
+select throws_ok(
+  $$ insert into public.penalties (team_id, kind, points) values ('11111111-1111-1111-1111-111111111111', 'rule_violation', 60) $$,
+  '23514', null,
+  'descumprimento do regulamento fica entre 5 e 50 pontos'
 );
 
 update public.event_config set voting_open = false;

@@ -7,6 +7,7 @@ import { AdminConfigPage } from './pages/admin/AdminConfigPage'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { AdminLayout } from './pages/admin/AdminLayout'
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
+import { AdminPenaltiesPage } from './pages/admin/AdminPenaltiesPage'
 import { AdminQrCodesPage } from './pages/admin/AdminQrCodesPage'
 import { AdminReportPage } from './pages/admin/AdminReportPage'
 import { AdminTeamsPage } from './pages/admin/AdminTeamsPage'
@@ -49,6 +50,7 @@ function App() {
         <Route path="qrcodes" element={<AdminQrCodesPage />} />
         <Route path="eleitoras" element={<AdminVotersPage key="popular" />} />
         <Route path="juri" element={<AdminVotersPage key="jury" role="jury" />} />
+        <Route path="penalidades" element={<AdminPenaltiesPage />} />
         <Route path="relatorio" element={<AdminReportPage />} />
         <Route path="configuracoes" element={<AdminConfigPage />} />
       </Route>

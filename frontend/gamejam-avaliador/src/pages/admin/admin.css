@@ -340,11 +340,15 @@
   }
 
   .report__col-game {
-    width: 25%;
+    width: 22%;
   }
 
   .report__col-score {
     width: 11%;
+  }
+
+  .report__col-penalty {
+    width: 9%;
   }
 
   /* Seletores com table.data-table para vencer o estilo global da tabela. */
@@ -380,4 +384,19 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+}
+
+.penalty-preview {
+  display: flex;
+  align-items: center;
+  min-height: 47px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--red);
+}
+
+.report__penalty {
+  color: var(--red);
+  font-weight: 700;
 }

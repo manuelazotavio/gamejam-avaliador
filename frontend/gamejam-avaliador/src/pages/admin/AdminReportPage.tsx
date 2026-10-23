@@ -19,6 +19,10 @@ function gameName(result: TeamResult): string {
   return result.gameTitle || result.teamName
 }
 
+function formatPenalty(points: number): string {
+  return points > 0 ? `-${points}` : '—'
+}
+
 // CSV no padrão do Excel em português: ";" separa colunas, vírgula decimal e BOM para os acentos.
 function toCsv(results: TeamResult[]): string {
   const criteria = results[0]?.criterionScores ?? []
@@ -27,6 +31,7 @@ function toCsv(results: TeamResult[]): string {
     'Jogo',
     'Time',
     'Pontos (0-100)',
+    'Penalidades',
     ...criteria.map((c) => `${c.label} (máx. ${c.maxScore})`),
   ]
   const rows = results.map((r) => [
@@ -34,6 +39,7 @@ function toCsv(results: TeamResult[]): string {
     gameName(r),
     r.teamName,
     formatScore(r.finalScore),
+    formatPenalty(r.penaltyPoints),
     ...r.criterionScores.map((c) => formatScore(c.average)),
   ])
   const escape = (value: string) => (/[";\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value)
@@ -111,6 +117,7 @@ export function AdminReportPage() {
               <col className="report__col-pos" />
               <col className="report__col-game" />
               <col className="report__col-score" />
+              <col className="report__col-penalty" />
               {criteria.map((c) => (
                 <col key={c.criterion} />
               ))}
@@ -120,6 +127,7 @@ export function AdminReportPage() {
                 <th>Pos.</th>
                 <th>Jogo</th>
                 <th>Pontos (0-100)</th>
+                <th>Penalidades</th>
                 {criteria.map((c) => (
                   <th key={c.criterion}>
                     {c.label} <span className="report__max">(máx. {c.maxScore})</span>
@@ -138,6 +146,7 @@ export function AdminReportPage() {
                   <td>
                     <strong>{formatScore(r.finalScore)}</strong>
                   </td>
+                  <td className={r.penaltyPoints > 0 ? 'report__penalty' : undefined}>{formatPenalty(r.penaltyPoints)}</td>
                   {r.criterionScores.map((c) => (
                     <td key={c.criterion}>{formatScore(c.average)}</td>
                   ))}
@@ -145,7 +154,7 @@ export function AdminReportPage() {
               ))}
               {report.results.length === 0 && (
                 <tr>
-                  <td colSpan={3 + criteria.length} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
+                  <td colSpan={4 + criteria.length} style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
                     Nenhum time cadastrado ainda.
                   </td>
                 </tr>

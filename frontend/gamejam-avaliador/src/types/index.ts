@@ -67,7 +67,10 @@ export interface TeamResult {
   teamId: string
   teamName: string
   gameTitle: string
+  // Nota depois das penalidades; baseScore é a nota das avaliações, antes do desconto.
   finalScore: number
+  baseScore: number
+  penaltyPoints: number
   evaluationCount: number
   // Nota final: o público entra como mais um jurado em cada critério (regra de 2025).
   juryCount: number
@@ -92,4 +95,28 @@ export interface GeoCheckResult {
   allowed: boolean
   distanceMeters: number | null
   error: string | null
+}
+
+// Item 12 do edital: ausências tiram 2 pontos por integrante; o regulamento, de 5 a 50.
+export type PenaltyKind = 'opening_absence' | 'mentoring_absence' | 'showcase_absence' | 'rule_violation'
+
+export const PENALTY_KINDS: { kind: PenaltyKind; label: string }[] = [
+  { kind: 'opening_absence', label: 'Ausência na Abertura do Game Jam' },
+  { kind: 'mentoring_absence', label: 'Ausência nas Mentorias do Game Jam' },
+  { kind: 'showcase_absence', label: 'Ausência na Mostra Interativa de Jogos Digitais' },
+  { kind: 'rule_violation', label: 'Descumprimento do regulamento' },
+]
+
+export const POINTS_PER_ABSENT_MEMBER = 2
+export const RULE_VIOLATION_MIN = 5
+export const RULE_VIOLATION_MAX = 50
+
+export interface Penalty {
+  id: string
+  teamId: string
+  kind: PenaltyKind
+  members: number | null
+  points: number
+  note: string | null
+  createdAt: number
 }

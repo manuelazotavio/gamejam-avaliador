@@ -2,7 +2,7 @@ import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
 import { isValidCpf, stripCpf } from '../lib/cpf'
 import { supabase } from '../lib/supabase'
 import { getDeviceId } from '../lib/voterSession'
-import { CRITERIA, type EventConfig, type EvaluationInput, type Team, type TeamResult, type Voter, type VoterRole } from '../types'
+import { CRITERIA, type EventConfig, type EvaluationInput, type Team, type TeamResult, type Voter, type VoterRole, type Penalty, type PenaltyKind } from '../types'
 
 const GENERIC_ERROR = 'Não foi possível falar com o servidor.'
 
@@ -105,6 +105,8 @@ type TeamResultRow = {
   team_name: string
   game_title: string | null
   final_score: number
+  base_score: number
+  penalty_points: number
   evaluation_count: number
   jury_count: number
   popular_count: number
@@ -118,6 +120,8 @@ export async function getResults(): Promise<TeamResult[]> {
     teamName: row.team_name,
     gameTitle: row.game_title ?? '',
     finalScore: row.final_score,
+    baseScore: row.base_score,
+    penaltyPoints: row.penalty_points,
     evaluationCount: row.evaluation_count,
     juryCount: row.jury_count,
     popularCount: row.popular_count,
@@ -280,6 +284,59 @@ export function checkVoterEligibility(cpf: string, teamId: string): Promise<Elig
 
 export async function submitEvaluation(cpf: string, teamId: string, scores: EvaluationInput): Promise<void> {
   await invokeFunction('submit-vote', { cpf: stripCpf(cpf), teamId, scores, deviceId: getDeviceId() })
+}
+
+// ---------------------------------------------------------------------------
+// Penalidades (admin)
+// ---------------------------------------------------------------------------
+
+interface PenaltyRow {
+  id: string
+  team_id: string
+  kind: PenaltyKind
+  members: number | null
+  points: number
+  note: string | null
+  created_at: string
+}
+
+const PENALTY_COLUMNS = 'id, team_id, kind, members, points, note, created_at'
+
+export interface PenaltyInput {
+  teamId: string
+  kind: PenaltyKind
+  members: number | null
+  points: number
+  note: string
+}
+
+export async function listPenalties(): Promise<Penalty[]> {
+  const rows = unwrap(await supabase.from('penalties').select(PENALTY_COLUMNS).order('created_at')) as PenaltyRow[]
+  return rows.map((row) => ({
+    id: row.id,
+    teamId: row.team_id,
+    kind: row.kind,
+    members: row.members,
+    points: row.points,
+    note: row.note,
+    createdAt: new Date(row.created_at).getTime(),
+  }))
+}
+
+export async function addPenalty(input: PenaltyInput): Promise<void> {
+  unwrap(
+    await supabase.from('penalties').insert({
+      team_id: input.teamId,
+      kind: input.kind,
+      members: input.members,
+      points: input.points,
+      note: input.note.trim() || null,
+    }),
+  )
+}
+
+export async function removePenalty(id: string): Promise<void> {
+  unwrap(await supabase.from('penalties').delete().eq('id', id))
 }
 
 // ---------------------------------------------------------------------------

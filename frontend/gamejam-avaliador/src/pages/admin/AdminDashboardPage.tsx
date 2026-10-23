@@ -75,7 +75,12 @@ export function AdminDashboardPage() {
                 <td>{result.rank}º</td>
                 <td>{result.teamName}</td>
                 <td>{result.gameTitle || '—'}</td>
-                <td>{result.finalScore.toFixed(1)}/100</td>
+                <td>
+                  {result.finalScore.toFixed(1)}/100
+                  {result.penaltyPoints > 0 && (
+                    <div style={{ fontSize: 12, color: 'var(--red)' }}>penalidades: -{result.penaltyPoints}</div>
+                  )}
+                </td>
                 {result.criterionScores.map((score) => (
                   <td key={score.criterion}>
                     {score.average.toFixed(1)}/{score.maxScore}

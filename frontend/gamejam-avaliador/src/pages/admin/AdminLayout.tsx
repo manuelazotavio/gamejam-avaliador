@@ -8,6 +8,7 @@ const links = [
   { to: '/admin/qrcodes', label: 'QR codes' },
   { to: '/admin/juri', label: 'Júri' },
   { to: '/admin/eleitoras', label: 'Eleitoras' },
+  { to: '/admin/penalidades', label: 'Penalidades' },
   { to: '/admin/relatorio', label: 'Relatório' },
   { to: '/admin/configuracoes', label: 'Configurações' },
 ]
