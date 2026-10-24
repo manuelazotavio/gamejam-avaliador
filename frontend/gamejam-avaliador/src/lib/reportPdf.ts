@@ -1,4 +1,5 @@
 import type { TeamResult, Voter, VoterRole } from '../types'
+import { formatCpf } from './cpf'
 
 // jsPDF vem da CDN só quando o admin pede o PDF: não pesa no site do público
 // e não exige mudar as dependências do build.
@@ -42,11 +43,6 @@ const TABLE_STYLES = {
 
 function formatScore(score: number): string {
   return score.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-// Na folha impressa o CPF sai mascarado, como na tela de votação.
-function maskCpf(cpf: string): string {
-  return `***.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-**`
 }
 
 function dateStamp(date: Date): string {
@@ -176,7 +172,7 @@ export async function downloadVotersPdf(voters: Voter[], role: VoterRole, genera
     body: voters.map((v, i) => [
       String(i + 1),
       v.name,
-      maskCpf(v.cpf),
+      formatCpf(v.cpf),
       v.hasVoted ? `${v.evaluationCount} ${v.evaluationCount === 1 ? 'time avaliado' : 'times avaliados'}` : 'Ainda não votou',
     ]),
     columnStyles: {
