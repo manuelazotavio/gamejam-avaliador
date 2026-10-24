@@ -89,6 +89,8 @@ export interface EventConfig {
   requireLocation: boolean
   votersOnly: boolean
   oneVotePerDevice: boolean
+  // Placar visível só para o júri (e admins).
+  resultsPrivate: boolean
 }
 
 export interface GeoCheckResult {

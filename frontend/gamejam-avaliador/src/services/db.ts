@@ -114,7 +114,17 @@ type TeamResultRow = {
 
 export async function getResults(): Promise<TeamResult[]> {
   const rows = unwrap(await supabase.from('team_results').select('*').order('rank')) as TeamResultRow[]
-  return rows.map((row) => ({
+  return rows.map(toResult)
+}
+
+// Com os resultados privados, o júri recebe o placar por uma Edge Function que confere o CPF.
+export async function getJuryResults(cpf: string): Promise<TeamResult[]> {
+  const { rows } = await invokeFunction<{ rows: TeamResultRow[] }>('jury-results', { cpf: stripCpf(cpf) })
+  return rows.map(toResult)
+}
+
+function toResult(row: TeamResultRow): TeamResult {
+  return {
     rank: row.rank,
     teamId: row.team_id,
     teamName: row.team_name,
@@ -131,7 +141,7 @@ export async function getResults(): Promise<TeamResult[]> {
       maxScore: criterion.max,
       average: Number(row[toColumn(criterion.key)]),
     })),
-  }))
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -224,6 +234,7 @@ interface EventConfigRow {
   require_location: boolean
   voters_only: boolean
   one_vote_per_device: boolean
+  results_private: boolean
 }
 
 function toConfig(row: EventConfigRow): EventConfig {
@@ -237,10 +248,11 @@ function toConfig(row: EventConfigRow): EventConfig {
     requireLocation: row.require_location,
     votersOnly: row.voters_only,
     oneVotePerDevice: row.one_vote_per_device,
+    resultsPrivate: row.results_private,
   }
 }
 
-const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device'
+const CONFIG_COLUMNS = 'event_name, latitude, longitude, radius_meters, voting_open, one_vote_per_ip, require_location, voters_only, one_vote_per_device, results_private'
 
 export async function getConfig(): Promise<EventConfig> {
   return toConfig(unwrap(await supabase.from('event_config').select(CONFIG_COLUMNS).eq('id', 1).single()))
@@ -260,6 +272,7 @@ export async function updateConfig(config: EventConfig): Promise<EventConfig> {
         require_location: config.requireLocation,
         voters_only: config.votersOnly,
         one_vote_per_device: config.oneVotePerDevice,
+        results_private: config.resultsPrivate,
       })
       .eq('id', 1)
       .select(CONFIG_COLUMNS)

@@ -137,6 +137,12 @@ export function AdminConfigPage() {
             label="Votação aberta"
           />
           <Toggle
+            checked={config.resultsPrivate}
+            onChange={(resultsPrivate) => setConfig({ ...config, resultsPrivate })}
+            label="Resultados só para o júri"
+            hint="Ligado, a página de resultados pede o CPF e mostra o placar só para quem está no júri."
+          />
+          <Toggle
             checked={config.requireLocation}
             onChange={(requireLocation) => setConfig({ ...config, requireLocation })}
             label="Exigir verificação de localização"

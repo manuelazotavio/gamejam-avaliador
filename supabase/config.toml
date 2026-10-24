@@ -10,3 +10,6 @@ verify_jwt = false
 
 [functions.submit-vote]
 verify_jwt = false
+
+[functions.jury-results]
+verify_jwt = false
