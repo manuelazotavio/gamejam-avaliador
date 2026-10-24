@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { formatCpf } from '../../lib/cpf'
+import { downloadVotersPdf } from '../../lib/reportPdf'
 import { isSpreadsheet, readVoterSpreadsheet } from '../../lib/spreadsheet'
 import { importVoters, listVoters, removeVoter, type VoterImportRow } from '../../services/db'
 import type { Voter, VoterRole } from '../../types'
@@ -43,7 +44,21 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
   const [text, setText] = useState('')
   const [importing, setImporting] = useState(false)
   const [readingFile, setReadingFile] = useState(false)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleDownloadPdf() {
+    if (!voters) return
+    setGeneratingPdf(true)
+    try {
+      await downloadVotersPdf(voters, role, new Date())
+    } catch (error) {
+      console.error(error)
+      notify('Não foi possível gerar o PDF. Confira a conexão e tente de novo.', 'error')
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
 
   async function refresh() {
     setVoters(await listVoters(role))
@@ -115,6 +130,13 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
           <span className="eyebrow">{copy.eyebrow}</span>
           <h1 style={{ fontSize: 28, marginTop: 8 }}>{copy.title}</h1>
         </div>
+        <button
+          className="btn btn-primary"
+          onClick={handleDownloadPdf}
+          disabled={generatingPdf || !voters || voters.length === 0}
+        >
+          {generatingPdf ? 'Gerando PDF...' : 'Baixar lista em PDF'}
+        </button>
       </div>
 
       <div className="card" style={{ marginBottom: 28 }}>
