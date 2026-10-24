@@ -47,11 +47,11 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
   const [generatingPdf, setGeneratingPdf] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  async function handleDownloadPdf() {
+  async function handleDownloadPdf(onlyVoted: boolean) {
     if (!voters) return
     setGeneratingPdf(true)
     try {
-      await downloadVotersPdf(voters, role, new Date())
+      await downloadVotersPdf(voters, role, new Date(), { onlyVoted })
     } catch (error) {
       console.error(error)
       notify('Não foi possível gerar o PDF. Confira a conexão e tente de novo.', 'error')
@@ -130,13 +130,22 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
           <span className="eyebrow">{copy.eyebrow}</span>
           <h1 style={{ fontSize: 28, marginTop: 8 }}>{copy.title}</h1>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={handleDownloadPdf}
-          disabled={generatingPdf || !voters || voters.length === 0}
-        >
-          {generatingPdf ? 'Gerando PDF...' : 'Baixar lista em PDF'}
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => handleDownloadPdf(false)}
+            disabled={generatingPdf || !voters || voters.length === 0}
+          >
+            {generatingPdf ? 'Gerando PDF...' : 'Baixar lista em PDF'}
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => handleDownloadPdf(true)}
+            disabled={generatingPdf || !voters || !voters.some((v) => v.hasVoted)}
+          >
+            PDF só de quem votou
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: 28 }}>

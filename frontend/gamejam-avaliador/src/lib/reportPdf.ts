@@ -148,18 +148,27 @@ export async function downloadReportPdf(results: TeamResult[], generatedAt: Date
   doc.save(`relatorio-ciencia-delas-${generatedAt.toISOString().slice(0, 10)}.pdf`)
 }
 
-const VOTER_LIST: Record<VoterRole, { title: string; file: string }> = {
-  popular: { title: 'Eleitoras cadastradas', file: 'eleitoras' },
-  jury: { title: 'Avaliadoras do júri', file: 'juri' },
+const VOTER_LIST: Record<VoterRole, { title: string; votedTitle: string; file: string }> = {
+  popular: { title: 'Eleitoras cadastradas', votedTitle: 'Eleitoras que votaram', file: 'eleitoras' },
+  jury: { title: 'Avaliadoras do júri', votedTitle: 'Avaliadoras do júri que votaram', file: 'juri' },
 }
 
-export async function downloadVotersPdf(voters: Voter[], role: VoterRole, generatedAt: Date): Promise<void> {
+// onlyVoted: lista só quem já avaliou ao menos um time.
+export async function downloadVotersPdf(
+  allVoters: Voter[],
+  role: VoterRole,
+  generatedAt: Date,
+  { onlyVoted = false }: { onlyVoted?: boolean } = {},
+): Promise<void> {
   const { doc, autoTable } = await loadPdf()
-  const { title, file } = VOTER_LIST[role]
-  const voted = voters.filter((v) => v.hasVoted).length
+  const { title, votedTitle, file } = VOTER_LIST[role]
+  const voters = onlyVoted ? allVoters.filter((v) => v.hasVoted) : allVoters
+  const voted = allVoters.filter((v) => v.hasVoted).length
   const startY = drawHeader(
     doc,
-    `${title} · ${voters.length} cadastradas, ${voted} já votaram · gerado em ${dateStamp(generatedAt)}`,
+    onlyVoted
+      ? `${votedTitle} · ${voted} de ${allVoters.length} cadastradas · gerado em ${dateStamp(generatedAt)}`
+      : `${title} · ${allVoters.length} cadastradas, ${voted} já votaram · gerado em ${dateStamp(generatedAt)}`,
   )
 
   autoTable(doc, {
@@ -189,5 +198,5 @@ export async function downloadVotersPdf(voters: Voter[], role: VoterRole, genera
   })
 
   drawPageNumbers(doc)
-  doc.save(`${file}-ciencia-delas-${generatedAt.toISOString().slice(0, 10)}.pdf`)
+  doc.save(`${file}${onlyVoted ? '-que-votaram' : ''}-ciencia-delas-${generatedAt.toISOString().slice(0, 10)}.pdf`)
 }
