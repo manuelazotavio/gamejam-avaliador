@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader } from '../../components/Loader'
 import { useToast } from '../../context/useToast'
 import { formatCpf } from '../../lib/cpf'
+import { isSpreadsheet, readVoterSpreadsheet } from '../../lib/spreadsheet'
 import { importVoters, listVoters, removeVoter, type VoterImportRow } from '../../services/db'
 import type { Voter, VoterRole } from '../../types'
 
@@ -41,6 +42,7 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
   const [voters, setVoters] = useState<Voter[] | null>(null)
   const [text, setText] = useState('')
   const [importing, setImporting] = useState(false)
+  const [readingFile, setReadingFile] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function refresh() {
@@ -71,10 +73,32 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
     }
   }
 
-  function handleFile(file: File) {
-    const reader = new FileReader()
-    reader.onload = () => setText((prev) => (prev ? `${prev}\n${reader.result}` : String(reader.result)))
-    reader.readAsText(file)
+  function appendText(content: string) {
+    setText((prev) => (prev ? `${prev}\n${content}` : content))
+  }
+
+  async function handleFile(file: File) {
+    if (!isSpreadsheet(file)) {
+      const reader = new FileReader()
+      reader.onload = () => appendText(String(reader.result))
+      reader.readAsText(file)
+      return
+    }
+    setReadingFile(true)
+    try {
+      const lines = await readVoterSpreadsheet(file)
+      if (lines.length === 0) {
+        notify('A planilha está vazia.', 'error')
+        return
+      }
+      appendText(lines.join('\n'))
+      notify(`${lines.length} linhas lidas da planilha. Confira e clique em Importar.`, 'info')
+    } catch (error) {
+      console.error(error)
+      notify('Não foi possível ler a planilha. Confira o arquivo e a conexão.', 'error')
+    } finally {
+      setReadingFile(false)
+    }
   }
 
   async function handleRemove(voter: Voter) {
@@ -94,9 +118,10 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
       </div>
 
       <div className="card" style={{ marginBottom: 28 }}>
-        <h3 style={{ marginBottom: 6 }}>Colar lista ou importar CSV</h3>
+        <h3 style={{ marginBottom: 6 }}>Colar lista ou importar planilha</h3>
         <p style={{ marginBottom: 16 }}>
-          Um registro por linha, no formato <code>cpf, nome</code>. {copy.help}
+          Um registro por linha, no formato <code>cpf, nome</code>, ou uma planilha Excel (.xlsx) com colunas{' '}
+          <code>CPF</code> e <code>Nome</code>. {copy.help}
         </p>
         <textarea
           className="input"
@@ -109,15 +134,20 @@ export function AdminVotersPage({ role = 'popular' }: { role?: VoterRole }) {
           <button className="btn btn-primary" onClick={handleImport} disabled={importing}>
             {importing ? 'Importando...' : 'Importar'}
           </button>
-          <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
-            Escolher arquivo .csv
+          <button className="btn btn-ghost" onClick={() => fileRef.current?.click()} disabled={readingFile}>
+            {readingFile ? 'Lendo planilha...' : 'Escolher arquivo (.xlsx ou .csv)'}
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept=".csv,.txt"
+            accept=".xlsx,.xls,.csv,.txt"
             hidden
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              // Limpa o campo para dar para escolher o mesmo arquivo de novo.
+              e.target.value = ''
+              if (file) void handleFile(file)
+            }}
           />
         </div>
       </div>
