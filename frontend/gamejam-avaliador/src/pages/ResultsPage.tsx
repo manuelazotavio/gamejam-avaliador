@@ -1,6 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader } from '../components/Loader'
-import { formatCpf, isValidCpf, stripCpf } from '../lib/cpf'
 import { readVoterSession } from '../lib/voterSession'
 import { getConfig, getJuryResults, getResults } from '../services/db'
 import type { TeamResult } from '../types'
@@ -10,9 +9,6 @@ type State = { status: 'loading' } | { status: 'jury-only' } | { status: 'ready'
 
 export function ResultsPage() {
   const [state, setState] = useState<State>({ status: 'loading' })
-  const [cpfInput, setCpfInput] = useState('')
-  const [checking, setChecking] = useState(false)
-  const [cpfError, setCpfError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -21,7 +17,7 @@ export function ResultsPage() {
         setState({ status: 'ready', results: await getResults() })
         return
       }
-      // Privado: o banco só devolve o placar para admins; o júri entra pelo CPF.
+      // Privado: o banco só devolve o placar para admins; o júri usa o CPF já salvo ao votar.
       const adminResults = await getResults()
       if (adminResults.length > 0) {
         setState({ status: 'ready', results: adminResults })
@@ -33,30 +29,13 @@ export function ResultsPage() {
           setState({ status: 'ready', results: await getJuryResults(savedCpf) })
           return
         } catch {
-          // CPF salvo não é do júri: cai no pedido de CPF.
+          // CPF salvo não é do júri: mostra o aviso.
         }
       }
       setState({ status: 'jury-only' })
     }
     void load()
   }, [])
-
-  async function handleJuryCpf(event: FormEvent) {
-    event.preventDefault()
-    if (!isValidCpf(cpfInput)) {
-      setCpfError('Digite um CPF válido.')
-      return
-    }
-    setChecking(true)
-    setCpfError(null)
-    try {
-      setState({ status: 'ready', results: await getJuryResults(cpfInput) })
-    } catch (error) {
-      setCpfError((error as Error).message)
-    } finally {
-      setChecking(false)
-    }
-  }
 
   if (state.status === 'loading') {
     return (
@@ -71,26 +50,9 @@ export function ResultsPage() {
       <div className="page container container--narrow">
         <span className="eyebrow">resultados</span>
         <h1 style={{ fontSize: 36, marginTop: 10, marginBottom: 24 }}>Resultados</h1>
-        <form className="card vote-card" onSubmit={handleJuryCpf} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="card vote-card">
           <h2 style={{ fontSize: 22 }}>Os resultados estão disponíveis apenas para o júri</h2>
-          <p>Se você faz parte do júri, informe seu CPF para ver o placar.</p>
-          <div className="field">
-            <label htmlFor="jury-cpf">CPF</label>
-            <input
-              id="jury-cpf"
-              className="input"
-              placeholder="000.000.000-00"
-              value={formatCpf(cpfInput)}
-              onChange={(event) => setCpfInput(stripCpf(event.target.value))}
-              maxLength={14}
-              inputMode="numeric"
-            />
-          </div>
-          {cpfError && <div className="alert alert--error">{cpfError}</div>}
-          <button type="submit" className="btn btn-primary btn-block" disabled={checking}>
-            {checking ? 'Verificando...' : 'Ver resultados'}
-          </button>
-        </form>
+        </div>
       </div>
     )
   }
